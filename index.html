@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f7f2"><meta name="color-scheme" content="light dark"><meta name="description" content="Pawly Pocket — carteira digital de saúde, histórico e cuidados dos seus pets.">
+<link rel="manifest" href="/manifest.json"><link rel="icon" type="image/svg+xml" href="/pawly-icon.svg"><link rel="apple-touch-icon" href="/pawly-icon.svg">
+<title>Pawly Pocket — tudo do seu pet no bolso</title><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#" data-page="home"><span class="brand-mark">✿</span><span><b>Pawly</b><small>tudo do seu pet no bolso</small></span></a>
+  <div class="pet-mini"><div class="pet-avatar" id="miniAvatar">🐶</div><div><b id="miniName">Minha cadela</b><small>Perfil da pet</small></div><button class="icon-btn" data-page="profile" aria-label="Editar perfil">↗</button></div>
+  <div class="nav-label">MENU PRINCIPAL</div>
+  <nav class="nav">
+    <button class="nav-link active" data-page="home"><span>⌂</span> Visão geral</button>
+    <button class="nav-link" data-page="vaccines"><span>♡</span> Vacinação</button>
+    <button class="nav-link" data-page="heat"><span>◉</span> Controle de cio</button>
+    <button class="nav-link" data-page="health"><span>✚</span> Saúde e histórico</button>
+    <button class="nav-link" data-page="reproduction"><span>♧</span> Reprodução</button>
+    <button class="nav-link" data-page="calendar"><span>▦</span> Calendário</button>
+    <button class="nav-link" data-page="customize"><span>◐</span> Personalizar</button>
+  </nav>
+  <div class="sidebar-bottom"><div class="tip-card"><span>🌷</span><b>Pequenos cuidados, grandes momentos.</b><p>Registre cada detalhe da saúde dela.</p></div><button class="nav-link" data-page="backup"><span>⇧</span> Backup e dados</button><div class="sidebar-foot">Pawly Pocket • Seus dados ficam no seu aparelho</div></div>
+</aside>
+<main class="main">
+<header class="topbar"><button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">☰</button><div class="crumb">Pawly Pocket <span>/</span> <b id="pageName">Visão geral</b></div><div class="top-actions"><button class="icon-btn notification-btn" id="alertsBtn" title="Ver lembretes">♧<i id="alertDot"></i></button><div class="top-avatar" id="topAvatar">🐶</div></div></header>
+<div class="content" id="content"></div>
+<footer class="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer>
+</main>
+</div>
+<div class="overlay" id="overlay"></div><div class="toast" id="toast"></div>
+<script src="/app.js"></script>
+</body></html>
