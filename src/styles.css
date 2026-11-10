@@ -73,3 +73,12 @@
 
 .app-shell .pet-photo-preview{width:112px;height:112px;object-fit:cover;border-radius:18px;border:1px solid var(--line)}
 .app-shell .photo-upload{display:grid;gap:8px}
+
+.app-shell .calendar-toolbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px}
+.app-shell .react-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.app-shell .calendar-day-name{text-align:center;color:var(--muted);font-size:11px;padding:8px 2px}
+.app-shell .calendar-cell{min-height:74px;border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.app-shell .calendar-cell>span{font-size:10px;color:var(--green-dark);background:var(--mint);border-radius:6px;padding:4px}
+.app-shell .calendar-cell.today{outline:2px solid var(--green-dark);outline-offset:-2px}
+.app-shell .calendar-cell.empty{background:transparent;border-color:transparent}
+@media(max-width:520px){.app-shell .calendar-cell{min-height:54px;padding:5px;font-size:11px}.app-shell .calendar-cell>span{font-size:8px;padding:3px}.app-shell .react-calendar-grid{gap:3px}}
