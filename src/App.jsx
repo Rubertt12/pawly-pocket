@@ -39,7 +39,7 @@ function App() {
   const heat = [...(pet.heat || [])].filter(x => x.start).sort((a,b) => b.start.localeCompare(a.start));
   const lastHeat = heat[0];
   const elapsed = lastHeat ? Math.max(0, daysBetween(lastHeat.start)) : null;
-  const intervals = heat.slice().reverse().slice(1).map((x,i,arr) => Math.round((new Date(heat.slice().reverse()[i+1].start+'T12:00:00') - new Date(x.start+'T12:00:00')) / 86400000)).filter(n => n >= 90 && n <= 500);\n  const interval = intervals.length ? Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length) : Math.min(500,Math.max(90,Number(pet.heatIntervalDays)||180));
+  const orderedHeat = [...(pet.heat || [])].filter(x => x.start).sort((a,b) => a.start.localeCompare(b.start));\n  const intervals = orderedHeat.slice(1).map((x,i) => Math.round((new Date(x.start+'T12:00:00') - new Date(orderedHeat[i].start+'T12:00:00')) / 86400000)).filter(n => n >= 90 && n <= 500);\n  const interval = intervals.length ? Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length) : Math.min(500,Math.max(90,Number(pet.heatIntervalDays)||180));
   const nextHeat = lastHeat ? new Date(new Date(lastHeat.start+'T12:00:00').getTime() + interval*86400000) : null;
   const remaining = nextHeat ? Math.ceil((nextHeat.getTime() - new Date().setHours(0,0,0,0))/86400000) : null;
   const upcoming = useMemo(() => [...(pet.events||[]), ...(pet.vaccines||[]).filter(x=>x.next).map(x=>({id:x.id,title:x.name,date:x.next,type:'Vacina'}))].filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5), [pet]);
