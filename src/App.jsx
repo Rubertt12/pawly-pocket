@@ -61,6 +61,14 @@ function App() {
     return [...recurring(pet.vaccines||[],'Vacina'), ...recurring((pet.health||[]).filter(x=>x.repeatEnabled),'Saúde'), ...recurring(pet.events||[],'Compromisso'), ...recurring((pet.heat||[]).filter(x=>x.repeatEnabled),'Cio'), ...recurring((pet.reproduction||[]).filter(x=>x.repeatEnabled),'Reprodução')]
       .filter(x=>x.date && daysUntil(x.date)<=30).sort((a,b)=>a.date.localeCompare(b.date));
   }, [pet]);
+  React.useEffect(()=>{
+    if(!('Notification' in window) || Notification.permission!=='granted') return;
+    const due=upcoming.filter(x=>daysUntil(x.date)<=1);
+    const stamp=todayISO()+'-'+pet.id;
+    if(!due.length || localStorage.getItem('pawly_notified_'+stamp)) return;
+    new Notification('Pawly Pocket · lembrete',{body:due.slice(0,3).map(x=>(x.title||x.name||x.type)+' — '+(daysUntil(x.date)===0?'hoje':daysUntil(x.date)<0?'atrasado':'amanhã')).join('\n')});
+    localStorage.setItem('pawly_notified_'+stamp,'1');
+  },[upcoming,pet.id]);
   const openForm = (type, existing={}) => { setForm({...existing,date:existing.date||new Date().toISOString().slice(0,10)}); setModal(type); };
   const allRecords = (source=pet) => {
     const groups=[['Vacina',source.vaccines||[],x=>x.name||'Vacina',x=>x.date||x.next],['Cio',source.heat||[],x=>'Ciclo de cio',x=>x.start],['Saúde',source.health||[],x=>x.title||x.type||'Registro de saúde',x=>x.date],['Reprodução',source.reproduction||[],x=>x.type||'Evento reprodutivo',x=>x.date],['Compromisso',source.events||[],x=>x.title||x.type||'Compromisso',x=>x.date]];
