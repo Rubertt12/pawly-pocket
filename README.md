@@ -20,7 +20,7 @@ Aplicativo responsivo para organizar o cuidado e o histórico dos pets. A branch
 - Reprodução, gestação, parto, pós-parto e filhotes (registros organizacionais).
 - Compromissos e calendário mensal com navegação entre meses.
 - Linha do tempo e busca geral entre pets.
-- Central de lembretes e avisos no navegador quando a permissão está concedida e o app é aberto.
+- Central de lembretes, avisos no navegador e agendamento de notificações locais nativas com Capacitor.
 - Documentos e exames anexados no IndexedDB.
 - Compartilhamento da ficha e relatório imprimível/PDF.
 - Tema claro/escuro e cor principal personalizável.
