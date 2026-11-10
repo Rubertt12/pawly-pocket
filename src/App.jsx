@@ -34,7 +34,8 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState('');
   const [form, setForm] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');\n  const [calendarCursor, setCalendarCursor] = useState(() => new Date(new Date().getFullYear(),new Date().getMonth(),1));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [calendarCursor, setCalendarCursor] = useState(() => new Date(new Date().getFullYear(),new Date().getMonth(),1));
   const [documents, setDocuments] = useState([]);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}').settings?.dashboard || {}; } catch { return {}; } });
   const [dark, setDark] = useState(localStorage.getItem('pawly_theme') === 'dark');
