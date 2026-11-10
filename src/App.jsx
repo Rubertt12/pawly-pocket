@@ -17,7 +17,7 @@ function readStore() {
 const nav = [
   ['home','⌂','Visão geral'],['vaccines','♡','Vacinação'],['heat','◉','Controle de cio'],
   ['health','✚','Saúde e histórico'],['reproduction','♧','Reprodução'],['calendar','▦','Calendário'],
-  ['customize','◐','Personalizar'],['backup','⇧','Backup e dados']
+  ['pets','♧','Meus pets'],['timeline','◷','Linha do tempo'],['search','⌕','Buscar registros'],['reminders','♧','Central de lembretes'],['documents','▤','Documentos'],['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']
 ];
 const date = value => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 const daysBetween = value => Math.floor((new Date().setHours(0,0,0,0) - new Date(value+'T12:00:00').getTime()) / 86400000);
@@ -28,6 +28,9 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState('');
   const [form, setForm] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [documents, setDocuments] = useState([]);
+  const [dashboardPrefs, setDashboardPrefs] = useState(() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}').settings?.dashboard || {}; } catch { return {}; } });
   const [dark, setDark] = useState(localStorage.getItem('pawly_theme') === 'dark');
   const pet = store.pets.find(p => p.id === store.activePetId) || store.pets[0];
   const profile = pet.profile || {};
@@ -42,13 +45,30 @@ function App() {
   const orderedHeat = [...(pet.heat || [])].filter(x => x.start).sort((a,b) => a.start.localeCompare(b.start));\n  const intervals = orderedHeat.slice(1).map((x,i) => Math.round((new Date(x.start+'T12:00:00') - new Date(orderedHeat[i].start+'T12:00:00')) / 86400000)).filter(n => n >= 90 && n <= 500);\n  const interval = intervals.length ? Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length) : Math.min(500,Math.max(90,Number(pet.heatIntervalDays)||180));
   const nextHeat = lastHeat ? new Date(new Date(lastHeat.start+'T12:00:00').getTime() + interval*86400000) : null;
   const remaining = nextHeat ? Math.ceil((nextHeat.getTime() - new Date().setHours(0,0,0,0))/86400000) : null;
-  const upcoming = useMemo(() => [...(pet.events||[]), ...(pet.vaccines||[]).filter(x=>x.next).map(x=>({id:x.id,title:x.name,date:x.next,type:'Vacina'}))].filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5), [pet]);
-  const openForm = type => { setForm({date:new Date().toISOString().slice(0,10)}); setModal(type); };
+  const upcoming = useMemo(() => {
+    const recurring = (arr, label) => arr.map(x => ({...x, title:x.title||x.name||x.type||label, date:x.repeatEnabled ? nextRecurringDate(x) : (x.next||x.date||x.start), type:label}));
+    return [...recurring(pet.vaccines||[],'Vacina'), ...recurring((pet.health||[]).filter(x=>x.repeatEnabled),'Saúde'), ...recurring(pet.events||[],'Compromisso'), ...recurring((pet.heat||[]).filter(x=>x.repeatEnabled),'Cio'), ...recurring((pet.reproduction||[]).filter(x=>x.repeatEnabled),'Reprodução')]
+      .filter(x=>x.date && daysBetween(x.date)<=30).sort((a,b)=>a.date.localeCompare(b.date));
+  }, [pet]);
+  const openForm = (type, existing={}) => { setForm({...existing,date:existing.date||new Date().toISOString().slice(0,10)}); setModal(type); };
+  const allRecords = (source=pet) => {
+    const groups=[['Vacina',source.vaccines||[],x=>x.name||'Vacina',x=>x.date||x.next],['Cio',source.heat||[],x=>'Ciclo de cio',x=>x.start],['Saúde',source.health||[],x=>x.title||x.type||'Registro de saúde',x=>x.date],['Reprodução',source.reproduction||[],x=>x.type||'Evento reprodutivo',x=>x.date],['Compromisso',source.events||[],x=>x.title||x.type||'Compromisso',x=>x.date]];
+    return groups.flatMap(([category,arr,label,getDate])=>arr.map(x=>({id:x.id,category,title:label(x),date:getDate(x),notes:x.notes||'',petName:source.profile?.name||'Pet',petId:source.id}))).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  };
+  const openPetForm = (target=pet) => { setForm({...target.profile, _petId:target.id}); setModal('pet'); };
+  const loadDocuments = async () => { try { const dbi=await openFilesDb(); const all=await new Promise((resolve,reject)=>{const req=dbi.transaction('documents','readonly').objectStore('documents').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);}); setDocuments(all.filter(x=>x.petId===pet.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''))); } catch { setDocuments([]); } };
+  React.useEffect(()=>{ if(page==='documents') loadDocuments(); },[page,pet.id]);
   const saveForm = e => {
     e.preventDefault();
-    const entry = { ...form, id: crypto.randomUUID() };
+    if(modal==='pet'){
+      const { _petId, ...profileData }=form;
+      if(_petId){ setStore(s=>{const next={...s,pets:s.pets.map(x=>x.id===_petId?{...x,profile:{...x.profile,...profileData}}:x)};localStorage.setItem(STORAGE_KEY,JSON.stringify(next));return next;}); }
+      else { const np={...blankPet(),profile:{...blankPet().profile,...profileData}}; setStore(s=>{const next={...s,pets:[...s.pets,np],activePetId:np.id};localStorage.setItem(STORAGE_KEY,JSON.stringify(next));return next;}); }
+      setModal(''); return;
+    }
+    const entry = { ...form, id: form.id || crypto.randomUUID() };
     const key = modal === 'heat' ? 'heat' : modal === 'vaccine' ? 'vaccines' : modal === 'health' ? 'health' : modal === 'event' ? 'events' : 'reproduction';
-    updatePet(p => ({ ...p, [key]: [...(p[key]||[]), entry] }));
+    updatePet(p => ({ ...p, [key]: form.id ? (p[key]||[]).map(x=>x.id===form.id?entry:x) : [...(p[key]||[]), entry] }));
     setModal('');
   };
   const changePage = key => { setPage(key); setMenuOpen(false); };
