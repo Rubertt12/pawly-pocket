@@ -2,11 +2,30 @@
 
 **Seu pet. Sua vida. Tudo no bolso.**
 
-Aplicativo de cuidados e histórico dos pets. O projeto está em migração gradual de JavaScript puro para React + Vite, mantendo compatibilidade com os dados locais existentes.
+Aplicativo responsivo para organizar o cuidado e o histórico dos pets. A branch `rebuild/react-js` contém a migração progressiva para React 19 + Vite, mantendo a versão JavaScript original preservada em outra branch.
 
-## Estado da migração React
+## Branches
 
-A branch `rebuild/react-js` contém a nova entrada React e a primeira etapa de portabilidade: navegação, visão geral, cadastro básico, controle de cio, registros iniciais e tema claro/escuro. As demais áreas e fluxos avançados ainda precisam ser portados e validados antes de substituir a versão atual.
+- `archive/vanilla-js-2026-11-10`: snapshot integral da versão anterior em JavaScript puro.
+- `rebuild/react-js`: nova implementação React em desenvolvimento.
+- `main`: versão oficial, não alterada por esta migração.
+
+## Funcionalidades já portadas para React
+
+- Visão geral com indicadores e card de acompanhamento do cio.
+- Cadastro de múltiplos pets, edição de perfil e foto.
+- Carteira de vacinação com dose, reforço e lembretes recorrentes.
+- Controle de cio, histórico editável e estimativa baseada no histórico.
+- Saúde, medicamentos, consultas, peso e exames.
+- Reprodução, gestação, parto, pós-parto e filhotes (registros organizacionais).
+- Compromissos e calendário em lista.
+- Linha do tempo e busca geral entre pets.
+- Central de lembretes.
+- Documentos e exames anexados no IndexedDB.
+- Compartilhamento da ficha e relatório imprimível/PDF.
+- Tema claro/escuro e cor principal personalizável.
+- Backup e restauração JSON para dados textuais.
+- PWA e cache offline preservados durante a migração.
 
 ## Executar localmente
 
@@ -15,38 +34,32 @@ npm install
 npm run dev
 ```
 
-Para gerar a versão de produção:
+Build de produção:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Compatibilidade de dados
+## Compatibilidade e armazenamento
 
-A chave antiga `petal_data_v1` foi mantida. A leitura inicial reconhece o formato antigo de pet único e o formato com múltiplos pets. Não apagar nem renomear essa chave durante a migração. Antes de liberar a nova versão, validar migração com cópias reais de backup.
+A chave legada `petal_data_v1` foi mantida. A leitura reconhece o formato antigo de pet único e o formato com múltiplos pets. Dados textuais continuam no Local Storage; anexos usam o banco IndexedDB `pawly-pocket-files`.
 
-## Funcionalidades que precisam de portabilidade e validação
+O backup JSON ainda não inclui os binários dos documentos anexados. Antes de substituir a versão atual, é obrigatório validar migração com cópias reais de backup e confirmar que os documentos continuam vinculados aos pets corretos.
 
-- Carteira de vacinação: todos os campos, reforços e recorrências.
-- Saúde: tipos de registro, peso, medicamentos e anexos.
-- Reprodução: cobertura, gestação, parto, pós-parto e filhotes.
-- Calendário e lembretes recorrentes.
-- Linha do tempo, busca geral e central de lembretes.
-- Documentos no IndexedDB, abertura, exclusão e vínculo por pet.
-- Compartilhamento de ficha e relatório para impressão/PDF.
-- Importação de backup antigo e novo, preservando documentos quando possível.
-- Preferências do painel e personalização.
-- Testes responsivos, acessibilidade e funcionamento offline.
+## Validação
 
-## Arquitetura
+O workflow GitHub Actions `React build validation` executa `npm install` e `npm run build` na branch React. O bundle de produção é publicado como artifact do workflow.
 
-- React 19 + Vite.
-- Local Storage com compatibilidade da chave legada.
-- IndexedDB para anexos (a portar integralmente).
-- PWA/Service Worker mantidos durante a fase web.
-- Preparação futura para empacotamento Android/iOS via Capacitor.
+## Próximas etapas
 
-## Privacidade
+- Conferir o resultado do build automatizado e corrigir erros.
+- Testes funcionais com backup real da versão antiga.
+- Validar navegação, acessibilidade e responsividade em aparelhos reais.
+- Completar a migração dos fluxos que ainda diferem da versão anterior.
+- Preparar Capacitor e gerar builds Android/iOS.
+- Só então criar preview público e planejar substituição da versão web oficial.
 
-Os registros textuais permanecem no dispositivo. A sincronização em nuvem não está habilitada nesta etapa. Faça backups regulares. As previsões de ciclo e lembretes são organizacionais e não substituem avaliação veterinária.
+## Privacidade e observação veterinária
+
+Os registros permanecem no dispositivo; sincronização em nuvem não está habilitada. Faça backups regulares. Previsões de cio, lembretes e registros são ferramentas organizacionais e não substituem avaliação veterinária.
