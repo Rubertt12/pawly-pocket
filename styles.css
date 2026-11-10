@@ -177,3 +177,49 @@
 }
 
 .heat-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.heat-summary{background:#f7faf6;border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}.heat-summary small{display:block;color:var(--muted);font-size:10px;line-height:1.5}.heat-summary strong{display:block;font:800 18px Manrope;margin:8px 0;overflow-wrap:anywhere}.heat-interval-control{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.heat-interval-control .field{width:min(220px,100%)}.heat-interval-control>small{flex-basis:100%;color:var(--muted);font-size:10px}.heat-live-preview{background:var(--mint);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--green-dark);font-size:11px;line-height:1.6}.heat-live-preview small{display:block;color:var(--muted)}@media(max-width:600px){.heat-summary-grid{grid-template-columns:1fr}.heat-interval-control{align-items:stretch}.heat-interval-control .field{width:100%}}
+
+
+/* Pawly: cartões legíveis no modo escuro em qualquer tamanho de tela */
+@media(prefers-color-scheme:dark){
+  .pet-card,.document-card{
+    background:#202d25!important;
+    color:#edf4ee!important;
+    border-color:#3a4b3f!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);
+  }
+  .pet-card h3,.document-card b{color:#f0f6f1!important}
+  .pet-card p,.pet-card-meta,.document-card small{color:#b2c0b5!important}
+  .pet-card-avatar,.document-symbol{background:#304637!important;color:#d5ead9!important}
+  .pet-card .btn-line,.document-card .small-btn{background:#29372e!important;color:#e4eee6!important;border-color:#46584a!important}
+  .pet-card .btn-soft{background:#304637!important;color:#e0f0e3!important}
+  .heat-summary{
+    background:#202d25!important;
+    border-color:#3a4b3f!important;
+    color:#edf4ee!important;
+  }
+  .heat-summary small{color:#b2c0b5!important}
+  .heat-summary strong{color:#f0f6f1!important}
+  .heat-overview-card,.heat-overview-empty{
+    background:#202d25!important;border:1px solid #3a4b3f!important;color:#edf4ee!important;
+  }
+  .heat-overview-main small,.heat-overview-next small,.heat-overview-next span,.heat-overview-empty small{color:#b2c0b5!important}
+  .heat-overview-main strong,.heat-overview-next b,.heat-overview-empty b{color:#f0f6f1!important}
+}
+.heat-overview-card,.heat-overview-empty{display:flex;align-items:center;gap:16px;justify-content:space-between;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink)}
+.heat-overview-main{display:flex;align-items:center;gap:12px;min-width:0}
+.heat-overview-icon,.heat-overview-empty>span{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:13px;background:var(--mint);color:var(--green-dark);font-size:22px}
+.heat-overview-main small,.heat-overview-next small{display:block;font-size:10px;color:var(--muted);line-height:1.5}
+.heat-overview-main strong{display:block;font:800 23px Manrope;color:var(--ink);margin-top:2px}
+.heat-overview-next{display:grid;gap:3px}
+.heat-overview-next b{font:700 14px Manrope;color:var(--ink)}
+.heat-overview-next span{font-size:10px;color:var(--muted)}
+.heat-overview-empty{justify-content:flex-start}
+.heat-overview-empty>div{display:grid;gap:4px;flex:1}
+.heat-overview-empty b{font-size:12px;color:var(--ink)}
+.heat-overview-empty small{font-size:10px;color:var(--muted);line-height:1.5}
+@media(max-width:700px){
+ .heat-overview-card{align-items:stretch;flex-direction:column;gap:12px}
+ .heat-overview-empty{align-items:flex-start;flex-wrap:wrap}
+ .heat-overview-empty>div{min-width:calc(100% - 65px)}
+ .heat-overview-empty .btn{width:100%}
+}
