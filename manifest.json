@@ -1,0 +1,14 @@
+{
+  "name": "Pawly Pocket",
+  "short_name": "Pawly",
+  "description": "Seu pet. Sua vida. Tudo no bolso.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f2",
+  "theme_color": "#668875",
+  "icons": [
+    { "src": "/pawly-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
