@@ -18,7 +18,7 @@ Aplicativo responsivo para organizar o cuidado e o histórico dos pets. A branch
 - Controle de cio, histórico editável e estimativa baseada no histórico.
 - Saúde, medicamentos, consultas, peso e exames.
 - Reprodução, gestação, parto, pós-parto e filhotes (registros organizacionais).
-- Compromissos e calendário em lista.
+- Compromissos e calendário mensal com navegação entre meses.
 - Linha do tempo e busca geral entre pets.
 - Central de lembretes.
 - Documentos e exames anexados no IndexedDB.
