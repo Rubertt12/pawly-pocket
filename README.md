@@ -51,7 +51,7 @@ O backup JSON ainda não inclui os binários dos documentos anexados. Antes de s
 
 O workflow GitHub Actions `React build validation` executa `npm install` e `npm run build` na branch React. O bundle de produção é publicado como artifact do workflow.
 
-## Próximas etapas
+## Preparação para Android e iOS\n\n- Capacitor 8.6 configurado com identificador `com.pawlypocket.app` e saída web em `dist`.\n- Para gerar os projetos nativos, instalar as dependências e executar `npm run build`, `npm run cap:add:android` e `npm run cap:add:ios`; depois usar `npm run cap:sync`.\n- Android requer Android Studio e Android SDK. iOS requer macOS, Xcode e Xcode Command Line Tools.\n- As pastas nativas ainda não foram geradas nesta etapa; a configuração está preparada, mas não existem APK/AAB ou IPA prontos.\n\n## Próximas etapas
 
 - Conferir o resultado do build automatizado e corrigir erros.
 - Testes funcionais com backup real da versão antiga.
