@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App as NativeApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera } from '@capacitor/camera';
 
@@ -44,6 +45,24 @@ function App() {
   const [dark, setDark] = useState(localStorage.getItem('pawly_theme') === 'dark');
   const [nativeNotificationsEnabled, setNativeNotificationsEnabled] = useState(localStorage.getItem('pawly_native_notifications') === '1');
   const [cameraBusy, setCameraBusy] = useState(false);
+  React.useEffect(()=>{
+    if(!Capacitor.isNativePlatform())return;
+    let listener;
+    NativeApp.addListener('appRestoredResult',result=>{
+      if(result.pluginId!=='Camera'||result.methodName!=='takePhoto'||!result.success)return;
+      const photo=result.data?.thumbnail
+        ? 'data:image/'+(result.data.metadata?.format||'jpeg')+';base64,'+result.data.thumbnail
+        : result.data?.webPath;
+      if(!photo)return;
+      const current=readStore(),active=current.pets.find(p=>p.id===current.activePetId)||current.pets[0];
+      if(!active)return;
+      setStore(current);
+      setForm({...active.profile,_petId:active.id,photo});
+      setModal('pet');
+      alert('Foto recuperada. Confira e salve o perfil do pet.');
+    }).then(handle=>{listener=handle;}).catch(error=>console.warn('Não foi possível registrar a recuperação da câmera.',error));
+    return ()=>{listener?.remove();};
+  },[]);
   const [accent, setAccent] = useState(localStorage.getItem('pawly_theme_primary') || '#668875');
   React.useEffect(()=>{document.documentElement.style.setProperty('--green',accent);document.documentElement.style.setProperty('--green-dark',accent);},[accent]);
   const pet = store.pets.find(p => p.id === store.activePetId) || store.pets[0];
