@@ -165,3 +165,18 @@ body{overflow-x:hidden}
     padding-bottom: calc(28px + var(--pawly-safe-bottom));
   }
 }
+
+
+/* Central de notificações */
+.app-shell .switch-row{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:13px;font-weight:600}
+.app-shell .switch-row input,.app-shell .pref-row>input{width:auto;accent-color:var(--green-dark)}
+.app-shell .notification-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.app-shell .notification-actions button{min-height:42px}
+.app-shell .pref-row>div{min-width:0}
+.app-shell .pref-row .notice{margin:4px 0 0}
+@media(max-width:520px){
+ .app-shell .pref-row{align-items:flex-start;flex-wrap:wrap}
+ .app-shell .switch-row{margin-left:0}
+ .app-shell .notification-actions{display:grid;grid-template-columns:1fr}
+ .app-shell .notification-actions button{width:100%}
+}
