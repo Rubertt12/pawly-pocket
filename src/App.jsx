@@ -211,6 +211,7 @@ function App() {
       .subscribe();
     return ()=>{supabase.removeChannel(channel);};
   },[session?.user?.id,cloudReady]);
+  const pet = store.pets.find(p => p.id === store.activePetId) || store.pets[0];
   React.useEffect(()=>{
     if(page!=='sharing'||!session?.user?.id||!pet?.id)return;
     let active=true;
@@ -252,7 +253,6 @@ function App() {
   },[]);
   const [accent, setAccent] = useState(localStorage.getItem('pawly_theme_primary') || '#668875');
   React.useEffect(()=>{document.documentElement.style.setProperty('--green',accent);document.documentElement.style.setProperty('--green-dark',accent);},[accent]);
-  const pet = store.pets.find(p => p.id === store.activePetId) || store.pets[0];
   const profile = pet.profile || {};
   const updatePet = updater => setStore(current => {
     const next = { ...current, pets: current.pets.map(p => p.id === pet.id ? updater(p) : p) };
