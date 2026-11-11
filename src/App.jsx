@@ -61,6 +61,7 @@ function App() {
   const [updateStatus, setUpdateStatus] = useState('');
   const [updateVersion, setUpdateVersion] = useState('');
   const [session, setSession] = useState(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
@@ -97,9 +98,11 @@ function App() {
       if(!active)return;
       if(error)setAuthStatus('Não foi possível recuperar a sessão.');
       setSession(data?.session||null);
-    });
+      setSessionLoading(false);
+    }).catch(()=>setSessionLoading(false));
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,nextSession)=>{
       setSession(nextSession||null);
+      setSessionLoading(false);
       if(!nextSession)setCloudReady(false);
     });
     return ()=>{active=false;subscription.unsubscribe();};
@@ -405,7 +408,9 @@ function App() {
   const signOutAccount = async () => {
     const {error}=await supabase.auth.signOut();
     if(error){setAuthStatus(error.message);return;}
-    setSession(null);setCloudReady(false);setAuthStatus('Você saiu da conta. Os dados locais continuam neste aparelho.');
+    setSession(null);setCloudReady(false);setPage('home');setMenuOpen(false);setModal('');
+    const fresh=blankPet();setStore({pets:[fresh],activePetId:fresh.id});
+    setAuthStatus('Você saiu da conta. Os dados da conta não ficam visíveis nesta sessão; seus registros continuam salvos na nuvem.');
   };
   const createPetInvite = async e => {
     e.preventDefault();
@@ -588,6 +593,26 @@ function App() {
     if (page === 'backup') return <><div className="page-heading"><div><span className="eyebrow">SEUS DADOS</span><h1>Backup e dados</h1><p>Exporte ou restaure os registros e os arquivos anexados neste dispositivo.</p></div></div><Card title="Exportar backup completo"><p className="muted">Inclui perfis, vacinas, histórico, lembretes e documentos anexados (PDFs e imagens).</p><button className="btn btn-primary" onClick={exportData}>Exportar backup completo</button></Card><Card title="Restaurar backup"><label>Selecionar arquivo JSON<input type="file" accept="application/json,.json" onChange={e=>{const file=e.target.files?.[0];if(file)restoreData(file);e.target.value='';}}/></label><p className="muted-small">Compatível com backups antigos. Se o arquivo for antigo e não tiver documentos, os anexos que já estão neste aparelho serão preservados.</p></Card><p className="notice">Os documentos podem aumentar bastante o tamanho do arquivo. Guarde o backup em local seguro e faça uma nova exportação sempre que anexar arquivos importantes.</p></>;
     return <Card title="Em migração"><p>Esta área será portada para React na próxima etapa.</p></Card>;
   };
+  if(sessionLoading) return <div className={`pawly-auth-screen ${dark?'theme-dark':''}`}><div className="pawly-auth-loading"><span className="pawly-auth-mark">🐾</span><b>Pawly Pocket</b><p>Preparando seu espaço...</p></div></div>;
+  if(!session?.user) return <div className={`pawly-auth-screen ${dark?'theme-dark':''}`}>
+    <section className="pawly-auth-card">
+      <div className="pawly-auth-brand"><span className="pawly-auth-mark">🐾</span><div><b>Pawly Pocket</b><small>Seu pet. Sua vida. Tudo no bolso.</small></div></div>
+      <span className="eyebrow">BEM-VINDO AO PAWLY</span>
+      <h1>Seu cuidado começa aqui.</h1>
+      <p className="pawly-auth-intro">Entre na sua conta para acessar os perfis, históricos e lembretes dos seus pets em qualquer aparelho.</p>
+      {pendingInvite&&<div className="pawly-auth-invite">🐾 Você recebeu um convite para acompanhar um pet. Entre com o e-mail que recebeu o convite.</div>}
+      {!Capacitor.isNativePlatform()&&<button className="pawly-auth-google" disabled={authBusy} onClick={signInWithGoogle}>Continuar com Google</button>}
+      <div className="pawly-auth-separator"><span>ou entre com e-mail</span></div>
+      <form className="pawly-auth-form" onSubmit={signInWithEmail}>
+        <label>E-mail<input type="email" autoComplete="email" required value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="voce@email.com"/></label>
+        <label>Senha<input type="password" autoComplete="current-password" required minLength="6" value={authPassword} onChange={e=>setAuthPassword(e.target.value)} placeholder="Sua senha"/></label>
+        <button className="btn btn-primary" disabled={authBusy}>{authBusy?'Aguarde...':'Entrar na minha conta'}</button>
+        <button type="button" className="pawly-auth-create" disabled={authBusy} onClick={signUpWithEmail}>Criar uma conta gratuita</button>
+      </form>
+      {authStatus&&<p className="pawly-auth-status" role="status">{authStatus}</p>}
+      <p className="pawly-auth-privacy">🔒 Seus dados ficam vinculados à sua conta. Ao sair, eles deixam de aparecer neste aparelho até você entrar novamente.</p>
+    </section>
+  </div>;
   return <div className={`app-shell ${dark?'theme-dark':''}`}>
     <aside className={`sidebar ${menuOpen?'open':''}`}><a className="brand" href="#" onClick={e=>{e.preventDefault();changePage('home')}}><span className="brand-mark">🐾</span><span><b>Pawly Pocket</b><small>Seu pet. Sua vida. Tudo no bolso.</small></span></a><div className="pet-mini"><div className="pet-avatar">{profile.photo?<img src={profile.photo}/>: '🐶'}</div><div><b>{profile.name||'Minha pet'}</b><small>Perfil da pet</small></div><select aria-label="Selecionar pet" value={pet.id} onChange={e=>setStore(s=>{const n={...s,activePetId:e.target.value};localStorage.setItem(STORAGE_KEY,JSON.stringify(n));return n;})}>{store.pets.map(p=><option key={p.id} value={p.id}>{p.profile?.name||'Pet'}</option>)}</select><button className="small-btn" onClick={addPet}>+</button></div><div className="nav-label">MENU PRINCIPAL</div><nav className="nav">
       <button className={`nav-link nav-home ${page==='home'?'active':''}`} onClick={()=>changePage('home')}><span>⌂</span>Visão geral</button>
