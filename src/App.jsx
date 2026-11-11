@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as NativeApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { Camera } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 const STORAGE_KEY = 'petal_data_v1';
 const blankPet = () => ({ id: crypto.randomUUID(), profile: { name: 'Minha pet', breed: '', birth: '', sex: 'Fêmea', weight: '', notes: '', photo: '', sterilized: 'Não', microchip: '' }, vaccines: [], heat: [], health: [], reproduction: [], events: [] });
@@ -49,10 +49,8 @@ function App() {
     if(!Capacitor.isNativePlatform())return;
     let listener;
     NativeApp.addListener('appRestoredResult',result=>{
-      if(result.pluginId!=='Camera'||result.methodName!=='takePhoto'||!result.success)return;
-      const photo=result.data?.thumbnail
-        ? 'data:image/'+(result.data.metadata?.format||'jpeg')+';base64,'+result.data.thumbnail
-        : result.data?.webPath;
+      if(result.pluginId!=='Camera'||result.methodName!=='getPhoto'||!result.success)return;
+      const photo=result.data?.dataUrl || result.data?.webPath || (result.data?.base64String ? 'data:image/'+(result.data.format||'jpeg')+';base64,'+result.data.base64String : '');
       if(!photo)return;
       const current=readStore(),active=current.pets.find(p=>p.id===current.activePetId)||current.pets[0];
       if(!active)return;
@@ -127,12 +125,15 @@ function App() {
     }
     try {
       setCameraBusy(true);
-      const result = source==='camera'
-        ? await Camera.takePhoto({quality:82,includeMetadata:true,targetWidth:1280,targetHeight:1280})
-        : (await Camera.chooseFromGallery({quality:82,limit:1,includeMetadata:true})).results?.[0];
-      if(!result)return;
-      const format=(result.metadata?.format||'jpeg').toLowerCase();
-      const photo=result.thumbnail?('data:image/'+format+';base64,'+result.thumbnail):result.webPath;
+      const result = await Camera.getPhoto({
+        quality:82,
+        width:1280,
+        height:1280,
+        correctOrientation:true,
+        resultType:CameraResultType.DataUrl,
+        source:source==='camera'?CameraSource.Camera:CameraSource.Photos
+      });
+      const photo=result.dataUrl || result.webPath;
       if(!photo)throw new Error('A imagem não foi retornada pelo dispositivo.');
       setForm(f=>({...f,photo}));
     } catch(error) {
