@@ -125,16 +125,21 @@ function App() {
         const {data,error}=await supabase.from('pets').select('id,user_id,name,data,updated_at').order('updated_at',{ascending:false});
         if(error)throw error;
         if(!active)return;
+        const current=readStore();
         if(data?.length){
           const pets=data.map(row=>({
             ...blankPet(),...(row.data&&typeof row.data==='object'?row.data:{}),id:row.id,
             profile:{...blankPet().profile,...(row.data?.profile||{})},
             _cloudOwnerId:row.user_id,_sharedRole:row.user_id===user.id?'owner':'editor'
           }));
-          const current=readStore();
           const next={...current,pets,activePetId:pets.some(p=>p.id===current.activePetId)?current.activePetId:pets[0].id};
           localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
           setStore(next);
+        }else if(current.pets.some(p=>p._cloudOwnerId && p._cloudOwnerId!==user.id)){
+          const fresh={pets:[blankPet()],activePetId:null};
+          fresh.activePetId=fresh.pets[0].id;
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));
+          setStore(fresh);
         }
         setCloudReady(true);
         setAuthStatus(inviteToAccept?'Convite aceito! Pet compartilhado sincronizado.':data?.length?'Conta conectada. Seus pets estão sincronizados.':'Conta conectada. Seus dados locais serão enviados ao banco.');
