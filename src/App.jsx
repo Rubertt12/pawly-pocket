@@ -123,7 +123,7 @@ function App() {
       const dbi=await openFilesDb();
       const allDocs=await new Promise((resolve,reject)=>{const req=dbi.transaction('documents','readonly').objectStore('documents').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
       const documents=await Promise.all(allDocs.map(async d=>({...d,blob:undefined,blobData:d.blob?await blobToDataUrl(d.blob):null})));
-      const payload={format:'pawly-pocket-backup',version:2,createdAt:new Date().toISOString(),data:store,documents};
+      const payload={format:'pawly-pocket-backup',version:2,createdAt:new Date().toISOString(),preferences:{theme:localStorage.getItem('pawly_theme')||'light',accent:localStorage.getItem('pawly_theme_primary')||'#668875'},data:store,documents};
       const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
       const url=URL.createObjectURL(blob),a=document.createElement('a');
       a.href=url;a.download='pawly-pocket-backup-completo.json';a.click();
@@ -163,6 +163,8 @@ function App() {
         }
         localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
         setStore(next);
+        if(parsed.preferences?.theme){localStorage.setItem('pawly_theme',parsed.preferences.theme);setDark(parsed.preferences.theme==='dark');}
+        if(parsed.preferences?.accent){localStorage.setItem('pawly_theme_primary',parsed.preferences.accent);setAccent(parsed.preferences.accent);}
         if(page==='documents') {
           const dbi=await openFilesDb();
           const all=await new Promise((resolve,reject)=>{const req=dbi.transaction('documents','readonly').objectStore('documents').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
