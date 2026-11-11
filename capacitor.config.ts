@@ -4,7 +4,13 @@ const config: CapacitorConfig = {
   appId: 'com.pawlypocket.app',
   appName: 'Pawly Pocket',
   webDir: 'dist',
-  plugins: {\n    SystemBars: {\n      insetsHandling: 'css',\n      initialViewportFitValueHint: 'cover'\n    }\n  },\n  server: {
+  plugins: {
+    SystemBars: {
+      insetsHandling: 'css',
+      initialViewportFitValueHint: 'cover'
+    }
+  },
+  server: {
     androidScheme: 'https'
   }
 };
