@@ -51,7 +51,18 @@ O backup completo exporta os documentos do IndexedDB junto com os registros, man
 
 O workflow GitHub Actions `React build validation` executa `npm install` e `npm run build` na branch React. O bundle de produção é publicado como artifact do workflow.
 
-## Preparação para Android e iOS\n\n- Capacitor 8.6 configurado com `@capacitor/core`, CLI, plataformas Android/iOS, identificador `com.pawlypocket.app` e saída web em `dist`.\n- Para gerar os projetos nativos, instalar as dependências e executar `npm run build`, `npm run cap:add:android` e `npm run cap:add:ios`; depois usar `npm run cap:sync`.\n- Android requer Android Studio e Android SDK. iOS requer macOS, Xcode e Xcode Command Line Tools.\n- As pastas nativas ainda não foram geradas nesta etapa; a configuração está preparada, mas não existem APK/AAB ou IPA prontos.\n\n## Próximas etapas
+## Preparação para Android e iOS
+
+- Capacitor 8.6 configurado com `@capacitor/core`, CLI, plataformas Android/iOS, identificador `com.pawlypocket.app` e saída web em `dist`.
+- Câmera e galeria usam `@capacitor/camera` 8.1+; captura e seleção da galeria estão ligadas ao perfil do pet.
+- Documentos usam o seletor de arquivos do sistema (`input type=file`), aceitando PDF e imagens de até 15 MB.
+- No Android, a seleção da galeria usa o Photo Picker; o plugin não solicita permissão ampla de armazenamento para esse fluxo.
+- No iOS, preencher `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription` e `NSPhotoLibraryAddUsageDescription` no `Info.plist` antes da distribuição.
+- Para gerar os projetos nativos, executar `npm install`, `npm run build`, `npm run cap:add:android` ou `npm run cap:add:ios` e depois `npm run cap:sync`.
+- Android requer Android Studio e Android SDK. iOS requer macOS, Xcode e Xcode Command Line Tools.
+- As pastas nativas ainda não foram geradas; não existem APK/AAB ou IPA prontos.
+
+## Próximas etapas
 
 - Testar captura pela câmera e seleção da galeria em Android físico.
 - Tratar a recuperação do resultado da câmera caso o Android encerre o processo em segundo plano.
