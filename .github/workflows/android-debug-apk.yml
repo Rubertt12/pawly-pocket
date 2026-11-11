@@ -52,6 +52,9 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Configure Android OAuth deep link
+        run: node scripts/configure-android-deep-links.mjs
+
       - name: Generate Pawly launcher icons
         run: node scripts/generate-android-icons.mjs
 
