@@ -5,6 +5,12 @@ const config: CapacitorConfig = {
   appName: 'Pawly Pocket',
   webDir: 'dist',
   plugins: {
+    CapacitorUpdater: {
+      autoUpdate: 'off',
+      resetWhenUpdate: false,
+      autoDeletePrevious: false,
+      appReadyTimeout: 10000
+    },
     SystemBars: {
       insetsHandling: 'css',
       initialViewportFitValueHint: 'cover'
