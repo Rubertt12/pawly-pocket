@@ -128,7 +128,8 @@ function App() {
 
   React.useEffect(()=>{
     if(!Capacitor.isNativePlatform())return;
-    let listener;
+    let listener, stateListener;
+    NativeApp.addListener('appStateChange',({isActive})=>{if(isActive)setAuthBusy(false);}).then(handle=>{stateListener=handle;}).catch(()=>{});
     NativeApp.addListener('appUrlOpen',async({url})=>{
       try{
         const callback=new URL(url);
@@ -140,9 +141,9 @@ function App() {
         else if(tokenHash){const type=callback.searchParams.get('type')||'signup';const {error}=await supabase.auth.verifyOtp({token_hash:tokenHash,type});if(error)throw error;setAuthBusy(false);setAuthStatus('E-mail confirmado com sucesso.');}
         else if(callback.hash){const params=new URLSearchParams(callback.hash.slice(1));const access_token=params.get('access_token'),refresh_token=params.get('refresh_token');if(access_token&&refresh_token){const {error}=await supabase.auth.setSession({access_token,refresh_token});if(error)throw error;}}
         await Browser.close().catch(()=>{});
-      }catch(error){setAuthStatus(error?.message||'Não foi possível concluir o retorno de autenticação.');await Browser.close().catch(()=>{});}
+      }catch(error){setAuthBusy(false);setAuthStatus(error?.message||'Não foi possível concluir o retorno de autenticação.');await Browser.close().catch(()=>{});}
     }).then(handle=>{listener=handle;}).catch(error=>console.warn('Falha ao registrar retorno de autenticação:',error));
-    return ()=>{listener?.remove();};
+    return ()=>{listener?.remove();stateListener?.remove();};
   },[]);
 
   React.useEffect(()=>{
