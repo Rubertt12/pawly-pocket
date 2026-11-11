@@ -8,7 +8,7 @@ import { supabase } from './lib/supabase.js';
 
 const STORAGE_KEY = 'petal_data_v1';
 const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
-const PAWLY_WEB_URL = 'https://petal-ruby.vercel.app/';
+const PAWLY_WEB_URL = 'https://petal-git-rebuild-react-js-rubertts-projects.vercel.app/';
 const blankPet = () => ({ id: crypto.randomUUID(), profile: { name: 'Minha pet', breed: '', birth: '', sex: 'Fêmea', weight: '', notes: '', photo: '', sterilized: 'Não', microchip: '' }, vaccines: [], heat: [], health: [], reproduction: [], events: [] });
 const todayISO = () => new Date().toISOString().slice(0,10);
 const addMonthsSafe = (value, months) => { const d=new Date(value+'T12:00:00'), day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+months); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); return d.toISOString().slice(0,10); };
@@ -342,7 +342,7 @@ function App() {
     if(authBusy)return;
     try{
       setAuthBusy(true);setAuthStatus('Criando sua conta...');
-      const {data,error}=await supabase.auth.signUp({email:authEmail.trim(),password:authPassword,options:{emailRedirectTo:window.location.origin}});
+      const {data,error}=await supabase.auth.signUp({email:authEmail.trim(),password:authPassword,options:{emailRedirectTo:Capacitor.isNativePlatform()?PAWLY_WEB_URL:window.location.origin}});
       if(error)throw error;
       setAuthStatus(data.session?'Conta criada e conectada.':'Conta criada. Confira seu e-mail para confirmar o cadastro.');
     }catch(error){setAuthStatus(error?.message||'Não foi possível criar a conta.');}
