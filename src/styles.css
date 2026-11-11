@@ -134,3 +134,34 @@ body{overflow-x:hidden}
 .theme-dark .nav-group-toggle{color:var(--muted)}
 .theme-dark .nav-group-toggle:hover,.theme-dark .nav-group.expanded>.nav-group-toggle{background:#293d30;color:#e5f2e8}
 
+
+
+/* Safe areas nativas: mantém cabeçalho e navegação abaixo da barra de status */
+:root {
+  --pawly-safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --pawly-safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+.app-shell {
+  padding-top: var(--pawly-safe-top);
+  min-height: calc(100dvh - var(--pawly-safe-top));
+  box-sizing: border-box;
+}
+.app-shell .sidebar {
+  top: var(--pawly-safe-top);
+  height: calc(100dvh - var(--pawly-safe-top) - var(--pawly-safe-bottom));
+  padding-bottom: calc(20px + var(--pawly-safe-bottom));
+}
+.app-shell .modal-backdrop {
+  padding-top: max(18px, var(--pawly-safe-top));
+  padding-bottom: max(18px, var(--pawly-safe-bottom));
+}
+@media(max-width:760px) {
+  .app-shell .sidebar {
+    height: calc(100dvh - var(--pawly-safe-top));
+    padding-top: 20px;
+    padding-bottom: calc(20px + var(--pawly-safe-bottom));
+  }
+  .app-shell .content {
+    padding-bottom: calc(28px + var(--pawly-safe-bottom));
+  }
+}
