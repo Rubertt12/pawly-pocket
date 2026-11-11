@@ -55,6 +55,7 @@ O workflow GitHub Actions `React build validation` executa `npm install` e `npm 
 
 - Capacitor 8.6 configurado com `@capacitor/core`, CLI, plataformas Android/iOS, identificador `com.pawlypocket.app` e saída web em `dist`.
 - Câmera e galeria usam `@capacitor/camera` 8.1+; captura e seleção da galeria estão ligadas ao perfil do pet.
+- `@capacitor/app` recupera o resultado da câmera se o Android encerrar o processo enquanto a câmera estiver aberta.
 - Documentos usam o seletor de arquivos do sistema (`input type=file`), aceitando PDF e imagens de até 15 MB.
 - No Android, a seleção da galeria usa o Photo Picker; o plugin não solicita permissão ampla de armazenamento para esse fluxo.
 - No iOS, preencher `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription` e `NSPhotoLibraryAddUsageDescription` no `Info.plist` antes da distribuição.
@@ -65,7 +66,7 @@ O workflow GitHub Actions `React build validation` executa `npm install` e `npm 
 ## Próximas etapas
 
 - Testar captura pela câmera e seleção da galeria em Android físico.
-- Tratar a recuperação do resultado da câmera caso o Android encerre o processo em segundo plano.
+- Testar a recuperação do resultado da câmera caso o Android encerre o processo em segundo plano.
 - Testar backup completo e restauração com arquivos reais.
 - Validar navegação, acessibilidade e responsividade em aparelhos reais.
 - Gerar o projeto Android e preparar um APK de teste após validação local.
