@@ -73,6 +73,20 @@ function App() {
   const cloudVersions = React.useRef({});
   const [pendingInvite, setPendingInvite] = useState(() => new URLSearchParams(window.location.search).get('invite') || '');
 
+  // Android system back gesture: close overlays first, then return to the overview.
+  React.useEffect(()=>{
+    if(!Capacitor.isNativePlatform())return;
+    let listener;
+    NativeApp.addListener('backButton',({canGoBack})=>{
+      if(modal){setModal('');return;}
+      if(menuOpen){setMenuOpen(false);return;}
+      if(page!=='home'){setPage('home');return;}
+      if(canGoBack){window.history.back();return;}
+      NativeApp.exitApp();
+    }).then(handle=>{listener=handle;}).catch(error=>console.warn('Não foi possível ativar o gesto Voltar do Android.',error));
+    return ()=>{listener?.remove();};
+  },[modal,menuOpen,page]);
+
   React.useEffect(()=>{
     if(!Capacitor.isNativePlatform())return;
     CapacitorUpdater.notifyAppReady().catch(error=>console.warn('Updater ainda não está pronto.',error));
