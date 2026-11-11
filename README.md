@@ -24,7 +24,7 @@ Aplicativo responsivo para organizar o cuidado e o histórico dos pets. A branch
 - Documentos e exames anexados no IndexedDB.
 - Compartilhamento da ficha e relatório imprimível/PDF.
 - Tema claro/escuro e cor principal personalizável.
-- Backup e restauração JSON para dados textuais.
+- Backup completo e restauração JSON, incluindo documentos e exames anexados no IndexedDB.
 - PWA e cache offline preservados durante a migração.
 
 ## Executar localmente
@@ -45,7 +45,7 @@ npm run preview
 
 A chave legada `petal_data_v1` foi mantida. A leitura reconhece o formato antigo de pet único e o formato com múltiplos pets. Dados textuais continuam no Local Storage; anexos usam o banco IndexedDB `pawly-pocket-files`.
 
-O backup JSON ainda não inclui os binários dos documentos anexados. Antes de substituir a versão atual, é obrigatório validar migração com cópias reais de backup e confirmar que os documentos continuam vinculados aos pets corretos.
+O backup completo exporta os documentos do IndexedDB junto com os registros, mantendo o vínculo com cada pet. A restauração aceita o formato completo e também backups antigos; quando um backup antigo não contém anexos, os documentos que já estão no aparelho são preservados.
 
 ## Validação
 
