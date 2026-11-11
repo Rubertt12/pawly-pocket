@@ -129,8 +129,10 @@ function App() {
   React.useEffect(()=>{
     if(!Capacitor.isNativePlatform())return;
     let listener, stateListener;
-    NativeApp.addListener('appStateChange',({isActive})=>{if(isActive)setAuthBusy(false);}).then(handle=>{stateListener=handle;}).catch(()=>{});
-    NativeApp.addListener('appUrlOpen',async({url})=>{
+    const handledUrls=new Set();
+    const handleAuthUrl=async url=>{
+      if(!url||handledUrls.has(url))return;
+      handledUrls.add(url);
       try{
         const callback=new URL(url);
         const invite=callback.searchParams.get('invite');
@@ -142,7 +144,10 @@ function App() {
         else if(callback.hash){const params=new URLSearchParams(callback.hash.slice(1));const access_token=params.get('access_token'),refresh_token=params.get('refresh_token');if(access_token&&refresh_token){const {error}=await supabase.auth.setSession({access_token,refresh_token});if(error)throw error;}}
         await Browser.close().catch(()=>{});
       }catch(error){setAuthBusy(false);setAuthStatus(error?.message||'Não foi possível concluir o retorno de autenticação.');await Browser.close().catch(()=>{});}
-    }).then(handle=>{listener=handle;}).catch(error=>console.warn('Falha ao registrar retorno de autenticação:',error));
+    };
+    NativeApp.addListener('appStateChange',({isActive})=>{if(isActive)setAuthBusy(false);}).then(handle=>{stateListener=handle;}).catch(()=>{});
+    NativeApp.addListener('appUrlOpen',({url})=>handleAuthUrl(url)).then(handle=>{listener=handle;}).catch(error=>console.warn('Falha ao registrar retorno de autenticação:',error));
+    NativeApp.getLaunchUrl().then(launch=>{if(launch?.url)handleAuthUrl(launch.url);}).catch(()=>{});
     return ()=>{listener?.remove();stateListener?.remove();};
   },[]);
 
