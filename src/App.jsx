@@ -117,7 +117,66 @@ function App() {
   const changePage = key => { setPage(key); setMenuOpen(false); };
   const toggleDark = () => setDark(v => { localStorage.setItem('pawly_theme', v ? 'light' : 'dark'); return !v; });
   const addPet = () => { setForm({...blankPet().profile,_petId:null}); setModal('pet'); };
-  const exportData = () => { const blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='pawly-pocket-backup.json';a.click();URL.revokeObjectURL(url); };
+  const blobToDataUrl = blob => new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);});
+  const exportData = async () => {
+    try {
+      const dbi=await openFilesDb();
+      const allDocs=await new Promise((resolve,reject)=>{const req=dbi.transaction('documents','readonly').objectStore('documents').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
+      const documents=await Promise.all(allDocs.map(async d=>({...d,blob:undefined,blobData:d.blob?await blobToDataUrl(d.blob):null})));
+      const payload={format:'pawly-pocket-backup',version:2,createdAt:new Date().toISOString(),data:store,documents};
+      const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='pawly-pocket-backup-completo.json';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      alert('Backup completo exportado: registros e '+documents.length+' documento(s).');
+    } catch(error) {
+      console.error('Falha ao exportar backup completo',error);
+      alert('Não foi possível incluir os documentos. Nenhum backup foi baixado.');
+    }
+  };
+  const restoreData = file => {
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      try {
+        const parsed=JSON.parse(reader.result),data=parsed.data||parsed;
+        let pets;
+        if(Array.isArray(data.pets)&&data.pets.length)pets=data.pets;
+        else if(data.profile)pets=[{...blankPet(),...data,id:data.id||'legacy-pet'}];
+        else throw new Error('Backup inválido');
+        const normalized=pets.map(p=>({...blankPet(),...p,profile:{...blankPet().profile,...p.profile}}));
+        const next={...data,pets:normalized,activePetId:normalized.some(p=>p.id===data.activePetId)?data.activePetId:normalized[0].id};
+        if(!confirm('A restauração substituirá os registros atuais. Deseja continuar?'))return;
+        if(Array.isArray(parsed.documents)) {
+          const docs=await Promise.all(parsed.documents.map(async d=>{
+            if(!d.id||!d.petId||!normalized.some(p=>p.id===d.petId))throw new Error('Documento sem vínculo válido com um pet');
+            const blob=d.blobData?await (await fetch(d.blobData)).blob():d.blob;
+            if(!(blob instanceof Blob))throw new Error('Arquivo de documento inválido');
+            const {blobData,...meta}=d;
+            return {...meta,blob};
+          }));
+          const dbi=await openFilesDb();
+          await new Promise((resolve,reject)=>{
+            const tx=dbi.transaction('documents','readwrite'),os=tx.objectStore('documents');
+            os.clear();docs.forEach(d=>os.put(d));
+            tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Restauração cancelada'));
+          });
+        }
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
+        setStore(next);
+        if(page==='documents') {
+          const dbi=await openFilesDb();
+          const all=await new Promise((resolve,reject)=>{const req=dbi.transaction('documents','readonly').objectStore('documents').getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
+          setDocuments(all.filter(x=>x.petId===next.activePetId).sort((a,b)=>(b.date||'').localeCompare(a.date||'')));
+        }
+        alert(Array.isArray(parsed.documents)?'Backup completo restaurado, incluindo documentos.':'Backup antigo restaurado. Os documentos locais foram preservados.');
+      } catch(error) {
+        console.error('Falha ao restaurar backup',error);
+        alert('Não foi possível restaurar o arquivo. Os dados atuais foram mantidos sempre que a validação falhou.');
+      }
+    };
+    reader.onerror=()=>alert('Não foi possível ler o arquivo selecionado.');
+    reader.readAsText(file);
+  };
   const content = () => {
     if (page === 'home') return <>
       <div className="page-heading"><div><span className="eyebrow">SEU ESPAÇO DE CUIDADO</span><h1>Olá! 💚</h1><p>Tudo organizado para acompanhar a saúde de {profile.name || 'sua pet'}.</p></div><button className="btn btn-primary" onClick={()=>openForm('health')}>+ Novo registro</button></div>
@@ -147,7 +206,7 @@ function App() {
     if (page === 'dashboard') return <><div className="page-heading"><div><span className="eyebrow">PREFERÊNCIAS</span><h1>Painel e notificações</h1><p>Configure os cartões da visão geral e alertas do dispositivo.</p></div></div><Card title="Cartões da visão geral">{[['welcome','Mensagem de boas-vindas'],['stats','Indicadores de saúde'],['main','Próximos cuidados e perfil']].map(([key,label])=><label className="pref-row" key={key}><input type="checkbox" checked={dashboardPrefs[key]!==false} onChange={e=>{const next={...dashboardPrefs,[key]:e.target.checked};setDashboardPrefs(next);setStore(s=>{const n={...s,settings:{...s.settings,dashboard:next}};localStorage.setItem(STORAGE_KEY,JSON.stringify(n));return n;});}}/> {label}</label>)}</Card><Card title="Notificações do dispositivo"><p className="muted">Permissão atual: {'Notification' in window ? Notification.permission : 'Não suportadas neste navegador'}</p><button className="btn btn-primary" onClick={async()=>{try{if(Capacitor.isNativePlatform()){let permission=await LocalNotifications.checkPermissions();if(permission.display!=='granted')permission=await LocalNotifications.requestPermissions();if(permission.display!=='granted'){alert('Permissão de notificações não concedida.');return;}localStorage.setItem('pawly_native_notifications','1');setNativeNotificationsEnabled(true);alert('Notificações do aparelho ativadas. Os próximos cuidados serão agendados.');return;}if(!('Notification' in window)){alert('Este navegador não oferece notificações.');return;}const permission=await Notification.requestPermission();alert('Permissão atual: '+permission);}catch{alert('Não foi possível ativar as notificações neste dispositivo.');}}}>Ativar notificações</button></Card><p className="notice">Mesmo com permissão, o navegador pode limitar avisos quando o aplicativo está fechado. Os lembretes continuam disponíveis na central.</p></>;
     if (page === 'documents') return <><div className="page-heading"><div><span className="eyebrow">ARQUIVOS</span><h1>Documentos e exames</h1><p>Guarde receitas, exames, laudos e comprovantes neste aparelho.</p></div></div><Card title="Anexar documento"><form className="form-grid" onSubmit={async e=>{e.preventDefault();const fd=new FormData(e.currentTarget),file=fd.get('file');if(!file||!file.size)return;if(file.size>15*1024*1024){alert('O limite por arquivo é 15 MB.');return;}try{const dbi=await openFilesDb();await new Promise((resolve,reject)=>{const tx=dbi.transaction('documents','readwrite');tx.objectStore('documents').put({id:crypto.randomUUID(),petId:pet.id,title:fd.get('title'),category:fd.get('category'),date:fd.get('date'),filename:file.name,mime:file.type,blob:file,createdAt:new Date().toISOString()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});e.currentTarget.reset();loadDocuments();}catch{alert('Não foi possível salvar o arquivo neste aparelho.');}}}><label>Nome do documento<input name="title" required placeholder="Ex.: Hemograma de novembro"/></label><label>Categoria<select name="category"><option>Exame</option><option>Receita</option><option>Laudo</option><option>Comprovante</option><option>Outro</option></select></label><label>Data<input name="date" type="date" defaultValue={todayISO()}/></label><label>Arquivo (PDF ou imagem)<input name="file" type="file" accept="application/pdf,image/*" required/></label><button className="btn btn-primary">Anexar documento</button></form></Card><Card title="Arquivos salvos">{documents.length?documents.map(d=><div className="list-row" key={d.id}><div><b>{d.title}</b><p>{d.category} · {date(d.date)} · {d.filename}</p></div><div className="actions"><button className="small-btn" onClick={()=>{const url=URL.createObjectURL(d.blob);const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}}>Abrir</button><button className="small-btn" onClick={async()=>{if(!confirm('Excluir este documento?'))return;const dbi=await openFilesDb();await new Promise(resolve=>{const tx=dbi.transaction('documents','readwrite');tx.objectStore('documents').delete(d.id);tx.oncomplete=resolve;});loadDocuments();}}>Excluir</button></div></div>):<p className="muted">Nenhum documento anexado para este pet.</p>}</Card><p className="notice">Os anexos são guardados no IndexedDB deste dispositivo e não são enviados para a internet. Ainda não entram no backup JSON.</p></>;
     if (page === 'customize') return <><div className="page-heading"><div><span className="eyebrow">PREFERÊNCIAS</span><h1>Personalizar</h1><p>Ajuste a aparência do Pawly Pocket.</p></div></div><Card title="Aparência"><button className="btn btn-soft" onClick={toggleDark}>Alternar para modo {dark?'claro':'escuro'}</button><label className="accent-picker">Cor principal<input type="color" value={accent} onChange={e=>{setAccent(e.target.value);localStorage.setItem('pawly_theme_primary',e.target.value);}}/></label><button className="small-btn" onClick={()=>{setAccent('#668875');localStorage.setItem('pawly_theme_primary','#668875');}}>Restaurar cor original</button></Card></>;
-    if (page === 'backup') return <><div className="page-heading"><div><span className="eyebrow">SEUS DADOS</span><h1>Backup e dados</h1><p>Exporte ou restaure os registros deste dispositivo.</p></div></div><Card title="Exportar backup"><button className="btn btn-primary" onClick={exportData}>Exportar backup JSON</button></Card><Card title="Restaurar backup"><label>Selecionar arquivo JSON<input type="file" accept="application/json,.json" onChange={e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const parsed=JSON.parse(reader.result),data=parsed.data||parsed;if(!confirm('A restauração substituirá os registros atuais. Deseja continuar?'))return;let pets;if(Array.isArray(data.pets)&&data.pets.length)pets=data.pets;else if(data.profile)pets=[{...blankPet(),...data,id:'legacy-pet'}];else throw new Error('Backup inválido');const normalized=pets.map(p=>({...blankPet(),...p,profile:{...blankPet().profile,...p.profile}}));const next={...data,pets:normalized,activePetId:normalized.some(p=>p.id===data.activePetId)?data.activePetId:normalized[0].id};localStorage.setItem(STORAGE_KEY,JSON.stringify(next));setStore(next);setModal('');alert('Backup restaurado.');}catch{alert('Arquivo inválido ou incompatível.');}};reader.readAsText(file);}}/></label></Card><p className="notice">O backup JSON inclui os dados textuais, mas não inclui os documentos anexados no IndexedDB.</p></>;
+    if (page === 'backup') return <><div className="page-heading"><div><span className="eyebrow">SEUS DADOS</span><h1>Backup e dados</h1><p>Exporte ou restaure os registros e os arquivos anexados neste dispositivo.</p></div></div><Card title="Exportar backup completo"><p className="muted">Inclui perfis, vacinas, histórico, lembretes e documentos anexados (PDFs e imagens).</p><button className="btn btn-primary" onClick={exportData}>Exportar backup completo</button></Card><Card title="Restaurar backup"><label>Selecionar arquivo JSON<input type="file" accept="application/json,.json" onChange={e=>{const file=e.target.files?.[0];if(file)restoreData(file);e.target.value='';}}/></label><p className="muted-small">Compatível com backups antigos. Se o arquivo for antigo e não tiver documentos, os anexos que já estão neste aparelho serão preservados.</p></Card><p className="notice">Os documentos podem aumentar bastante o tamanho do arquivo. Guarde o backup em local seguro e faça uma nova exportação sempre que anexar arquivos importantes.</p></>;
     return <Card title="Em migração"><p>Esta área será portada para React na próxima etapa.</p></Card>;
   };
   return <div className={`app-shell ${dark?'theme-dark':''}`}>
