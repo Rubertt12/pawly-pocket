@@ -133,3 +133,4 @@ body{overflow-x:hidden}
 .theme-dark .nav-group.expanded{background:#202d25;border-color:var(--line)}
 .theme-dark .nav-group-toggle{color:var(--muted)}
 .theme-dark .nav-group-toggle:hover,.theme-dark .nav-group.expanded>.nav-group-toggle{background:#293d30;color:#e5f2e8}
+
