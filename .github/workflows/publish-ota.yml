@@ -2,6 +2,17 @@ name: Publish Pawly Pocket live update
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - rebuild/react-js
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - '.github/workflows/publish-ota.yml'
 
 permissions:
   contents: write
