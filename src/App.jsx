@@ -77,6 +77,112 @@ function App() {
     CapacitorUpdater.notifyAppReady().catch(error=>console.warn('Updater ainda não está pronto.',error));
   },[]);
   React.useEffect(()=>{
+    let active=true;
+    supabase.auth.getSession().then(({data,error})=>{
+      if(!active)return;
+      if(error)setAuthStatus('Não foi possível recuperar a sessão.');
+      setSession(data?.session||null);
+    });
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,nextSession)=>{
+      setSession(nextSession||null);
+      if(!nextSession)setCloudReady(false);
+    });
+    return ()=>{active=false;subscription.unsubscribe();};
+  },[]);
+
+  React.useEffect(()=>{
+    if(!session?.user?.id){setCloudReady(false);return;}
+    let active=true;
+    (async()=>{
+      setCloudReady(false);
+      setAuthStatus('Preparando sua conta e sincronizando os pets...');
+      try{
+        const user=session.user;
+        const raw=localStorage.getItem(STORAGE_KEY);
+        const migrationKey='pawly_cloud_migrated_'+user.id;
+        if(raw && !localStorage.getItem(migrationKey)){
+          const local=JSON.parse(raw);
+          const localPets=Array.isArray(local.pets)?local.pets:[];
+          const owned=localPets.filter(p=>!p._cloudOwnerId||p._cloudOwnerId===user.id);
+          const payload=owned.map(p=>{
+            const id=isUuid(p.id)?p.id:crypto.randomUUID();
+            const data={...p,id};delete data._cloudOwnerId;delete data._sharedRole;
+            return {id,user_id:user.id,name:data.profile?.name||'Minha pet',data,updated_at:new Date().toISOString()};
+          });
+          if(payload.length){
+            const {error}=await supabase.from('pets').upsert(payload,{onConflict:'id'});
+            if(error)throw error;
+          }
+          localStorage.setItem(migrationKey,'1');
+        }
+        const inviteToAccept=pendingInvite;
+        if(inviteToAccept){
+          const {error}=await supabase.rpc('accept_pet_invitation',{p_token:inviteToAccept});
+          if(error)throw error;
+          const cleanUrl=new URL(window.location.href);cleanUrl.searchParams.delete('invite');
+          window.history.replaceState({},'',cleanUrl.toString());
+        }
+        const {data,error}=await supabase.from('pets').select('id,user_id,name,data,updated_at').order('updated_at',{ascending:false});
+        if(error)throw error;
+        if(!active)return;
+        if(data?.length){
+          const pets=data.map(row=>({
+            ...blankPet(),...(row.data&&typeof row.data==='object'?row.data:{}),id:row.id,
+            profile:{...blankPet().profile,...(row.data?.profile||{})},
+            _cloudOwnerId:row.user_id,_sharedRole:row.user_id===user.id?'owner':'editor'
+          }));
+          const current=readStore();
+          const next={...current,pets,activePetId:pets.some(p=>p.id===current.activePetId)?current.activePetId:pets[0].id};
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
+          setStore(next);
+        }
+        setCloudReady(true);
+        setAuthStatus(inviteToAccept?'Convite aceito! Pet compartilhado sincronizado.':data?.length?'Conta conectada. Seus pets estão sincronizados.':'Conta conectada. Seus dados locais serão enviados ao banco.');
+        if(inviteToAccept)setPendingInvite('');
+      }catch(error){
+        console.error('Falha na sincronização Pawly:',error);
+        if(active)setAuthStatus(error?.message||'Não foi possível sincronizar. Confira sua conexão e tente novamente.');
+      }
+    })();
+    return ()=>{active=false;};
+  },[session?.user?.id,pendingInvite]);
+
+  React.useEffect(()=>{
+    if(!session?.user?.id||!cloudReady)return;
+    let cancelled=false;
+    (async()=>{
+      for(const p of store.pets){
+        if(cancelled)return;
+        const data={...p};delete data._cloudOwnerId;delete data._sharedRole;
+        if(p._cloudOwnerId && p._cloudOwnerId!==session.user.id){
+          const {error}=await supabase.from('pets').update({name:data.profile?.name||'Minha pet',data,updated_at:new Date().toISOString()}).eq('id',p.id);
+          if(error)console.warn('Não foi possível sincronizar pet compartilhado:',error);
+        }else{
+          const {error}=await supabase.from('pets').upsert({id:p.id,user_id:session.user.id,name:data.profile?.name||'Minha pet',data,updated_at:new Date().toISOString()},{onConflict:'id'});
+          if(error)console.warn('Não foi possível sincronizar pet:',error);
+        }
+      }
+    })();
+    return ()=>{cancelled=true;};
+  },[store,session?.user?.id,cloudReady]);
+
+  React.useEffect(()=>{
+    if(page!=='sharing'||!session?.user?.id||!pet?.id)return;
+    let active=true;
+    (async()=>{
+      setShareStatus('Carregando compartilhamentos...');
+      const [membersResult,invitesResult]=await Promise.all([
+        supabase.from('pet_members').select('user_id,role,created_at').eq('pet_id',pet.id),
+        supabase.from('pet_invitations').select('id,invited_email,expires_at,accepted_at').eq('pet_id',pet.id).is('accepted_at',null)
+      ]);
+      if(!active)return;
+      if(membersResult.error||invitesResult.error){setShareStatus('Não foi possível carregar os acessos.');return;}
+      setShareMembers(membersResult.data||[]);setShareInvites(invitesResult.data||[]);setShareStatus('');
+    })();
+    return ()=>{active=false;};
+  },[page,pet?.id,session?.user?.id]);
+
+  React.useEffect(()=>{
     if(!Capacitor.isNativePlatform())return;
     let listener;
     NativeApp.addListener('appRestoredResult',result=>{
