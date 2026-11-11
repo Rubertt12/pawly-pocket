@@ -52,6 +52,9 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Generate Pawly launcher icons
+        run: node scripts/generate-android-icons.mjs
+
       - name: Copy Android notification sound
         run: node scripts/create-notification-sound.mjs
 
