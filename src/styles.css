@@ -180,3 +180,40 @@ body{overflow-x:hidden}
  .app-shell .notification-actions{display:grid;grid-template-columns:1fr}
  .app-shell .notification-actions button{width:100%}
 }
+
+
+/* Tela de autenticação Pawly Pocket */
+.pawly-auth-screen{min-height:100dvh;box-sizing:border-box;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 0%,#e3eee6 0%,#f5f8f5 48%,#eef3ef 100%);color:#26382d}
+.pawly-auth-card{width:min(100%,440px);box-sizing:border-box;background:#fff;border:1px solid #e1e9e2;border-radius:26px;padding:clamp(24px,6vw,38px);box-shadow:0 22px 70px #294b3518;display:flex;flex-direction:column;gap:16px}
+.pawly-auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.pawly-auth-brand>div{display:grid;gap:3px}
+.pawly-auth-brand b,.pawly-auth-loading b{font:800 19px Manrope,sans-serif;color:#304b39}
+.pawly-auth-brand small{font-size:11px;color:#748579}
+.pawly-auth-mark{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:#668875;color:#fff;font-size:26px}
+.pawly-auth-card .eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#668875}
+.pawly-auth-card h1{font:800 clamp(27px,7vw,34px)/1.12 Manrope,sans-serif;letter-spacing:-.7px;margin:0;color:#26382d}
+.pawly-auth-intro{font-size:14px;line-height:1.6;color:#718076;margin:-5px 0 2px}
+.pawly-auth-google,.pawly-auth-form .btn-primary{width:100%;min-height:48px;border-radius:12px;font-weight:750}
+.pawly-auth-google{border:1px solid #dce5de;background:#fff;color:#31483a}
+.pawly-auth-separator{display:flex;align-items:center;gap:12px;color:#87958b;font-size:11px}
+.pawly-auth-separator:before,.pawly-auth-separator:after{content:"";height:1px;flex:1;background:#e5ebe6}
+.pawly-auth-form{display:grid;gap:13px}
+.pawly-auth-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#425449}
+.pawly-auth-form input{width:100%;box-sizing:border-box;min-height:46px;padding:12px 13px;border:1px solid #dce5de;border-radius:11px;background:#fbfdfb;color:#26382d;font:inherit;outline:none}
+.pawly-auth-form input:focus{border-color:#668875;box-shadow:0 0 0 3px #66887520}
+.pawly-auth-create{border:0;background:transparent;color:#557963;font-weight:750;padding:8px}
+.pawly-auth-invite{padding:12px 14px;border-radius:12px;background:#edf5ef;color:#486b52;font-size:12px;line-height:1.5}
+.pawly-auth-status{margin:0;padding:11px 13px;border-radius:10px;background:#f1f5f1;color:#53675a;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.pawly-auth-privacy{margin:2px 0 0;text-align:center;color:#829087;font-size:10px;line-height:1.55}
+.pawly-auth-loading{display:grid;justify-items:center;gap:10px;color:#748579}
+.pawly-auth-loading p{margin:0;font-size:12px}
+.pawly-auth-screen.theme-dark{background:radial-gradient(ellipse at 50% 0%,#263b2e 0%,#111a16 72%);color:#edf4ee}
+.theme-dark .pawly-auth-card{background:#1c2922;border-color:#304239;box-shadow:0 22px 70px #0005}
+.theme-dark .pawly-auth-brand b,.theme-dark .pawly-auth-card h1{color:#edf4ee}
+.theme-dark .pawly-auth-brand small,.theme-dark .pawly-auth-intro,.theme-dark .pawly-auth-privacy{color:#a5b5aa}
+.theme-dark .pawly-auth-form label{color:#d5e2d8}
+.theme-dark .pawly-auth-form input{background:#142019;border-color:#3b5042;color:#edf4ee}
+.theme-dark .pawly-auth-google{background:#25352c;border-color:#405647;color:#edf4ee}
+.theme-dark .pawly-auth-separator:before,.theme-dark .pawly-auth-separator:after{background:#304239}
+.theme-dark .pawly-auth-invite,.theme-dark .pawly-auth-status{background:#263a2e;color:#d6e7da}
+@media(max-width:420px){.pawly-auth-screen{padding-left:12px;padding-right:12px}.pawly-auth-card{border-radius:21px;padding:23px 20px}}
