@@ -363,7 +363,8 @@ function App() {
       const token=crypto.randomUUID();
       const {error}=await supabase.from('pet_invitations').insert({pet_id:pet.id,invited_email:email,token,invited_by:session.user.id});
       if(error)throw error;
-      const inviteOrigin=Capacitor.isNativePlatform()?PAWLY_WEB_URL:window.location.origin;\n      const link=inviteOrigin+'/?invite='+encodeURIComponent(token);
+      const inviteOrigin=Capacitor.isNativePlatform()?PAWLY_WEB_URL:window.location.origin;
+      const link=inviteOrigin+'/?invite='+encodeURIComponent(token);
       try{await navigator.clipboard.writeText(link);setShareStatus('Convite criado e link copiado. Envie para '+email+'.');}
       catch{setShareStatus('Convite criado. Copie este link: '+link);}
       setInviteEmail('');
