@@ -21,7 +21,8 @@
     "@capacitor/camera": "^8.1.0",
     "@capacitor/app": "^8.0.0",
     "@capgo/capacitor-updater": "^8.54.0",
-    "@supabase/supabase-js": "2.119.0"
+    "@supabase/supabase-js": "2.119.0",
+    "@capacitor/browser": "^8.0.0"
   },
   "devDependencies": {
     "vite": "^6.0.0",
