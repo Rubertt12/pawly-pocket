@@ -70,6 +70,7 @@ function App() {
   const [shareInvites, setShareInvites] = useState([]);
   const [shareStatus, setShareStatus] = useState('');
   const [cloudReady, setCloudReady] = useState(false);
+  const cloudVersions = React.useRef({});
   const [pendingInvite, setPendingInvite] = useState(() => new URLSearchParams(window.location.search).get('invite') || '');
 
   React.useEffect(()=>{
@@ -95,6 +96,7 @@ function App() {
     let active=true;
     (async()=>{
       setCloudReady(false);
+      cloudVersions.current={};
       setAuthStatus('Preparando sua conta e sincronizando os pets...');
       try{
         const user=session.user;
@@ -126,6 +128,7 @@ function App() {
         if(error)throw error;
         if(!active)return;
         const current=readStore();
+        cloudVersions.current=Object.fromEntries((data||[]).map(row=>[row.id,row.updated_at]));
         if(data?.length){
           const pets=data.map(row=>({
             ...blankPet(),...(row.data&&typeof row.data==='object'?row.data:{}),id:row.id,
@@ -158,7 +161,7 @@ function App() {
     (async()=>{
       for(const p of store.pets){
         if(cancelled)return;
-        const data={...p};delete data._cloudOwnerId;delete data._sharedRole;
+        const data={...p};delete data._cloudOwnerId;delete data._sharedRole;delete data._cloudUpdatedAt;
         if(p._cloudOwnerId && p._cloudOwnerId!==session.user.id){
           const {error}=await supabase.from('pets').update({name:data.profile?.name||'Minha pet',data,updated_at:new Date().toISOString()}).eq('id',p.id);
           if(error)console.warn('Não foi possível sincronizar pet compartilhado:',error);
@@ -171,6 +174,43 @@ function App() {
     return ()=>{cancelled=true;};
   },[store,session?.user?.id,cloudReady]);
 
+
+  React.useEffect(()=>{
+    if(!session?.user?.id||!cloudReady)return;
+    const refreshSharedPets=async()=>{
+      const {data,error}=await supabase.from('pets').select('id,user_id,name,data,updated_at').order('updated_at',{ascending:false});
+      if(error||!data)return;
+      setStore(current=>{
+        const currentById=new Map(current.pets.map(p=>[p.id,p]));
+        let changed=false;
+        const pets=data.map(row=>{
+          const local=currentById.get(row.id);
+          const remoteData=row.data&&typeof row.data==='object'?row.data:{};
+          const localData=local?{...local}:null;
+          if(localData){delete localData._cloudOwnerId;delete localData._sharedRole;delete localData._cloudUpdatedAt;}
+          const same=local&&JSON.stringify(localData)===JSON.stringify(remoteData);
+          cloudVersions.current[row.id]=row.updated_at;
+          if(same)return local;
+          changed=true;
+          return {
+            ...blankPet(),...remoteData,id:row.id,
+            profile:{...blankPet().profile,...(remoteData.profile||{})},
+            _cloudOwnerId:row.user_id,_sharedRole:row.user_id===session.user.id?'owner':'editor'
+          };
+        });
+        if(current.pets.some(p=>p._cloudOwnerId&&!data.some(row=>row.id===p.id)))changed=true;
+        if(!changed)return current;
+        const next={...current,pets,activePetId:pets.some(p=>p.id===current.activePetId)?current.activePetId:(pets[0]?.id||null)};
+        if(!pets.length){const fresh=blankPet();next.pets=[fresh];next.activePetId=fresh.id;}
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
+        return next;
+      });
+    };
+    const channel=supabase.channel('pawly-pets-'+session.user.id)
+      .on('postgres_changes',{event:'*',schema:'public',table:'pets'},refreshSharedPets)
+      .subscribe();
+    return ()=>{supabase.removeChannel(channel);};
+  },[session?.user?.id,cloudReady]);
   React.useEffect(()=>{
     if(page!=='sharing'||!session?.user?.id||!pet?.id)return;
     let active=true;
