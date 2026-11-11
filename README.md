@@ -49,7 +49,7 @@ O backup completo exporta os documentos do IndexedDB junto com os registros, man
 
 ## Validação
 
-O workflow GitHub Actions `React build validation` executa `npm install` e `npm run build` na branch React. O bundle de produção é publicado como artifact do workflow.
+O workflow GitHub Actions `React build validation` executa `npm install` e `npm run build` na branch React. O bundle de produção é publicado como artifact do workflow. O workflow `Android debug APK` gera um APK de depuração para instalação e testes; ele não é assinado para distribuição na Play Store.
 
 ## Preparação para Android e iOS
 
@@ -69,7 +69,7 @@ O workflow GitHub Actions `React build validation` executa `npm install` e `npm 
 - Testar a recuperação do resultado da câmera caso o Android encerre o processo em segundo plano.
 - Testar backup completo e restauração com arquivos reais.
 - Validar navegação, acessibilidade e responsividade em aparelhos reais.
-- Gerar o projeto Android e preparar um APK de teste após validação local.
+- Executar o workflow `Android debug APK` e validar o APK em um aparelho físico.
 
 ## Privacidade e observação veterinária
 
