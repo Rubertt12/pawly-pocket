@@ -83,6 +83,7 @@ function App() {
   const [shareStatus, setShareStatus] = useState('');
   const [cloudReady, setCloudReady] = useState(false);
   const cloudVersions = React.useRef({});
+  const authEventSeen = React.useRef(false);
   const [pendingInvite, setPendingInvite] = useState(() => new URLSearchParams(window.location.search).get('invite') || '');
 
   // Android system back gesture: close overlays first, then return to the overview.
@@ -108,10 +109,11 @@ function App() {
     supabase.auth.getSession().then(({data,error})=>{
       if(!active)return;
       if(error)setAuthStatus('Não foi possível recuperar a sessão.');
-      setSession(data?.session||null);
+      if(!authEventSeen.current)setSession(data?.session||null);
       setSessionLoading(false);
     }).catch(()=>setSessionLoading(false));
     const {data:{subscription}}=supabase.auth.onAuthStateChange((event,nextSession)=>{
+      authEventSeen.current=true;
       setSession(nextSession||null);
       setSessionLoading(false);
       setAuthBusy(false);
