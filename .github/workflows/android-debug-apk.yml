@@ -7,6 +7,7 @@ on:
       - rebuild/react-js
     paths:
       - 'src/**'
+      - 'scripts/**'
       - 'public/**'
       - 'index.html'
       - 'package.json'
@@ -42,11 +43,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Generate notification sound asset
+        run: node scripts/create-notification-sound.mjs
+
       - name: Build web app
         run: npm run build
 
       - name: Generate Android project
         run: npx cap add android
+
+      - name: Copy Android notification sound
+        run: node scripts/create-notification-sound.mjs
 
       - name: Sync Capacitor plugins
         run: npx cap sync android
