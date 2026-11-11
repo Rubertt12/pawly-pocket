@@ -4,8 +4,11 @@ import { App as NativeApp } from '@capacitor/app';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { supabase } from './lib/supabase.js';
 
 const STORAGE_KEY = 'petal_data_v1';
+const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
+const PAWLY_WEB_URL = 'https://petal-ruby.vercel.app/';
 const blankPet = () => ({ id: crypto.randomUUID(), profile: { name: 'Minha pet', breed: '', birth: '', sex: 'Fêmea', weight: '', notes: '', photo: '', sterilized: 'Não', microchip: '' }, vaccines: [], heat: [], health: [], reproduction: [], events: [] });
 const todayISO = () => new Date().toISOString().slice(0,10);
 const addMonthsSafe = (value, months) => { const d=new Date(value+'T12:00:00'), day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+months); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); return d.toISOString().slice(0,10); };
@@ -33,7 +36,7 @@ const navGroups = [
   {id:'health',title:'Saúde',icon:'♡',items:[['vaccines','♡','Vacinação'],['heat','◉','Controle de cio'],['health','✚','Saúde e histórico']]},
   {id:'routine',title:'Rotina',icon:'▦',items:[['reproduction','♧','Reprodução'],['calendar','▦','Calendário'],['reminders','♧','Central de lembretes']]},
   {id:'records',title:'Pets e histórico',icon:'◷',items:[['pets','♧','Meus pets'],['profile','♙','Perfil do pet'],['timeline','◷','Linha do tempo'],['search','⌕','Buscar registros'],['documents','▤','Documentos']]},
-  {id:'settings',title:'Configurações',icon:'⚙',items:[['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']]}
+  {id:'settings',title:'Configurações',icon:'⚙',items:[['account','♙','Conta e nuvem'],['sharing','♧','Compartilhar pet'],['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']] }
 ];
 const date = value => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 const daysBetween = value => Math.floor((new Date().setHours(0,0,0,0) - new Date(value+'T12:00:00').getTime()) / 86400000);
@@ -57,6 +60,18 @@ function App() {
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateStatus, setUpdateStatus] = useState('');
   const [updateVersion, setUpdateVersion] = useState('');
+  const [session, setSession] = useState(null);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authStatus, setAuthStatus] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [shareMembers, setShareMembers] = useState([]);
+  const [shareInvites, setShareInvites] = useState([]);
+  const [shareStatus, setShareStatus] = useState('');
+  const [cloudReady, setCloudReady] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState(() => new URLSearchParams(window.location.search).get('invite') || '');
+
   React.useEffect(()=>{
     if(!Capacitor.isNativePlatform())return;
     CapacitorUpdater.notifyAppReady().catch(error=>console.warn('Updater ainda não está pronto.',error));
@@ -185,6 +200,71 @@ function App() {
     })();
     return ()=>{cancelled=true;};
   },[upcoming,pet.id,nativeNotificationsEnabled,notificationChannelId,notificationPrefs.sound,notificationPrefs.vibration]);
+
+  const signInWithGoogle = async () => {
+    try{
+      setAuthBusy(true);setAuthStatus('Abrindo acesso Google...');
+      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:PAWLY_WEB_URL}});
+      if(error)throw error;
+    }catch(error){setAuthStatus(error?.message||'Não foi possível iniciar o login Google.');}
+    finally{setAuthBusy(false);}
+  };
+  const signInWithEmail = async e => {
+    e.preventDefault();if(authBusy)return;
+    try{
+      setAuthBusy(true);setAuthStatus('Entrando...');
+      const {error}=await supabase.auth.signInWithPassword({email:authEmail.trim(),password:authPassword});
+      if(error)throw error;
+      setAuthStatus('Login realizado.');
+    }catch(error){setAuthStatus(error?.message||'Não foi possível entrar.');}
+    finally{setAuthBusy(false);}
+  };
+  const signUpWithEmail = async () => {
+    if(authBusy)return;
+    try{
+      setAuthBusy(true);setAuthStatus('Criando sua conta...');
+      const {data,error}=await supabase.auth.signUp({email:authEmail.trim(),password:authPassword,options:{emailRedirectTo:PAWLY_WEB_URL}});
+      if(error)throw error;
+      setAuthStatus(data.session?'Conta criada e conectada.':'Conta criada. Confira seu e-mail para confirmar o cadastro.');
+    }catch(error){setAuthStatus(error?.message||'Não foi possível criar a conta.');}
+    finally{setAuthBusy(false);}
+  };
+  const signOutAccount = async () => {
+    const {error}=await supabase.auth.signOut();
+    if(error){setAuthStatus(error.message);return;}
+    setSession(null);setCloudReady(false);setAuthStatus('Você saiu da conta. Os dados locais continuam neste aparelho.');
+  };
+  const createPetInvite = async e => {
+    e.preventDefault();
+    if(!session?.user?.id||!pet?.id)return;
+    const email=inviteEmail.trim().toLowerCase();
+    if(!email||email===session.user.email?.toLowerCase()){setShareStatus('Informe o e-mail de outra pessoa.');return;}
+    try{
+      setShareStatus('Criando convite...');
+      const token=crypto.randomUUID();
+      const {error}=await supabase.from('pet_invitations').insert({pet_id:pet.id,invited_email:email,token,invited_by:session.user.id});
+      if(error)throw error;
+      const link=PAWLY_WEB_URL+'?invite='+encodeURIComponent(token);
+      try{await navigator.clipboard.writeText(link);setShareStatus('Convite criado e link copiado. Envie para '+email+'.');}
+      catch{setShareStatus('Convite criado. Copie este link: '+link);}
+      setInviteEmail('');
+      const {data}=await supabase.from('pet_invitations').select('id,invited_email,expires_at,accepted_at').eq('pet_id',pet.id).is('accepted_at',null);
+      setShareInvites(data||[]);
+    }catch(error){setShareStatus(error?.message||'Não foi possível criar o convite.');}
+  };
+  const removePetMember = async userId => {
+    if(!confirm('Remover o acesso desta conta ao pet?'))return;
+    const {error}=await supabase.from('pet_members').delete().eq('pet_id',pet.id).eq('user_id',userId);
+    if(error){setShareStatus(error.message);return;}
+    setShareMembers(current=>current.filter(x=>x.user_id!==userId));
+    setShareStatus('Acesso removido.');
+  };
+  const revokePetInvite = async inviteId => {
+    const {error}=await supabase.from('pet_invitations').delete().eq('id',inviteId);
+    if(error){setShareStatus(error.message);return;}
+    setShareInvites(current=>current.filter(x=>x.id!==inviteId));
+    setShareStatus('Convite cancelado.');
+  };
   const openForm = (type, existing={}) => { setForm({...existing,date:existing.date||new Date().toISOString().slice(0,10)}); setModal(type); };
   const allRecords = (source=pet) => {
     const groups=[['Vacina',source.vaccines||[],x=>x.name||'Vacina',x=>x.date||x.next],['Cio',source.heat||[],x=>'Ciclo de cio',x=>x.start],['Saúde',source.health||[],x=>x.title||x.type||'Registro de saúde',x=>x.date],['Reprodução',source.reproduction||[],x=>x.type||'Evento reprodutivo',x=>x.date],['Compromisso',source.events||[],x=>x.title||x.type||'Compromisso',x=>x.date]];
@@ -322,6 +402,9 @@ function App() {
     }
     if (page === 'profile') return <><div className="page-heading"><div><span className="eyebrow">CADASTRO</span><h1>Perfil da pet</h1><p>Informações básicas da sua companheira.</p></div></div><Card title="Dados do pet"><form className="form-grid" onSubmit={e=>{e.preventDefault();updatePet(p=>({...p,profile:{...p.profile,...form}}));setForm({});}}>{['name','breed','birth','weight','sex','sterilized','microchip','notes'].map(k=><label key={k}>{({name:'Nome',breed:'Raça',birth:'Nascimento',weight:'Peso (kg)',sex:'Sexo',sterilized:'Castrada',microchip:'Microchip',notes:'Observações'})[k]}{k==='sex'||k==='sterilized'?<select value={form[k]??profile[k]??(k==='sex'?'Fêmea':'Não')} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}>{(k==='sex'?['Fêmea','Macho']:['Não','Sim']).map(x=><option key={x}>{x}</option>)}</select>:k==='notes'?<textarea value={form[k]??profile[k]??''} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/>:<input type={k==='birth'?'date':k==='weight'?'number':'text'} step={k==='weight'?'0.1':undefined} value={form[k]??profile[k]??''} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/>}</label>)}<label className="photo-upload">Foto do pet<input type="file" accept="image/*" onChange={e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>2*1024*1024){alert('Escolha uma imagem de até 2 MB.');return;}const reader=new FileReader();reader.onload=()=>setForm(f=>({...f,photo:reader.result}));reader.readAsDataURL(file);}}/></label><button className="btn btn-primary">Salvar perfil</button></form><div className="profile-extra-actions"><button className="btn btn-soft" onClick={async()=>{const p=profile;const shareText='Ficha de '+(p.name||'pet')+'\nRaça: '+(p.breed||'Não informada')+'\nNascimento: '+date(p.birth)+'\nPeso: '+(p.weight||'Não informado')+' kg\nSexo: '+(p.sex||'Não informado')+'\nMicrochip: '+(p.microchip||'—');if(navigator.share){try{await navigator.share({title:'Ficha de '+p.name,text:shareText});}catch{}}else if(navigator.clipboard){await navigator.clipboard.writeText(shareText);alert('Ficha copiada.');}}}>Compartilhar ficha</button><button className="btn btn-soft" onClick={()=>{const rows=allRecords();const html='<html><meta charset="utf-8"><title>Relatório Pawly</title><style>body{font:14px Arial;margin:32px;color:#26352c}h1{color:#3f6650}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left}</style><h1>Pawly Pocket · Relatório veterinário</h1><h2>'+profile.name+'</h2><p>'+profile.breed+' · Nascimento: '+date(profile.birth)+' · Peso: '+(profile.weight||'—')+' kg</p><table><tr><th>Data</th><th>Categoria</th><th>Registro</th><th>Observações</th></tr>'+rows.map(x=>'<tr><td>'+date(x.date)+'</td><td>'+x.category+'</td><td>'+x.title+'</td><td>'+x.notes+'</td></tr>').join('')+'</table></html>';const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();w.onload=()=>setTimeout(()=>w.print(),300);}}}>Gerar relatório / PDF</button></div></Card></>;
         if (page === 'pets') return <><div className="page-heading"><div><span className="eyebrow">PERFIS</span><h1>Meus pets</h1><p>Cada animal tem seu próprio perfil, histórico e lembretes.</p></div><button className="btn btn-primary" onClick={addPet}>+ Adicionar pet</button></div><div className="pet-grid">{store.pets.map(p=><article className="pet-card" key={p.id}><div className="pet-card-top"><div className="pet-card-avatar">{p.profile?.photo?<img src={p.profile.photo}/>: '🐶'}</div><div><h3>{p.profile?.name||'Pet sem nome'}</h3><p>{p.profile?.breed||'Raça não informada'}</p></div></div><div className="pet-card-meta"><span>{p.profile?.sex||'Sexo não informado'}</span><span>{p.profile?.weight?p.profile.weight+' kg':'Peso não informado'}</span></div><div className="pet-card-actions"><button className="btn btn-soft" onClick={()=>setStore(s=>{const n={...s,activePetId:p.id};localStorage.setItem(STORAGE_KEY,JSON.stringify(n));return n;})}>{p.id===pet.id?'Pet atual':'Selecionar'}</button><button className="btn btn-line" onClick={()=>openPetForm(p)}>Editar</button>{store.pets.length>1&&<button className="btn btn-line" onClick={()=>{if(!confirm('Excluir este pet e todos os registros associados?'))return;setStore(s=>{const pets=s.pets.filter(x=>x.id!==p.id);const n={...s,pets,activePetId:s.activePetId===p.id?pets[0].id:s.activePetId};localStorage.setItem(STORAGE_KEY,JSON.stringify(n));return n;});}}>Excluir</button>}</div></article>)}</div><p className="notice">Os dados antigos permanecem associados ao primeiro perfil migrado. A exclusão de um pet remove seus registros locais.</p></>;
+
+    if(page==='account') return <><div className="page-heading"><div><span className="eyebrow">CONTA E SINCRONIZAÇÃO</span><h1>Sua conta Pawly</h1><p>Acesse seus pets em mais de um aparelho e compartilhe o acompanhamento.</p></div></div><Card title="Acesso à nuvem">{session?.user?<><p><b>Conectado como</b></p><p>{session.user.email}</p><p className="notice">Os perfis e registros dos pets são sincronizados com segurança. Os documentos anexados continuam armazenados localmente neste aparelho nesta etapa.</p><button className="btn btn-soft" onClick={()=>{setCloudReady(false);setAuthStatus('Atualizando dados...');supabase.from('pets').select('id').then(()=>window.location.reload());}}>Atualizar dados</button> <button className="btn btn-line" onClick={signOutAccount}>Sair da conta</button></>:<><button className="btn btn-primary" disabled={authBusy} onClick={signInWithGoogle}>Continuar com Google</button><p className="notice">Ou entre com e-mail e senha.</p><form className="form-grid" onSubmit={signInWithEmail}><label>E-mail<input type="email" required value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="voce@email.com"/></label><label>Senha<input type="password" required minLength="6" value={authPassword} onChange={e=>setAuthPassword(e.target.value)} placeholder="Mínimo de 6 caracteres"/></label><button className="btn btn-primary" disabled={authBusy}>Entrar</button><button type="button" className="btn btn-soft" disabled={authBusy} onClick={signUpWithEmail}>Criar conta com e-mail</button></form></>}</Card>{authStatus&&<p className="notice" role="status">{authStatus}</p>}{pendingInvite&&<Card title="Convite recebido"><p>Você recebeu um convite para acompanhar um pet. Entre com o e-mail que recebeu o convite e toque em aceitar.</p><button className="btn btn-primary" disabled={!session||authBusy} onClick={async()=>{setAuthBusy(true);const {error}=await supabase.rpc('accept_pet_invitation',{p_token:pendingInvite});if(error)setAuthStatus(error.message);else{setPendingInvite('');const u=new URL(window.location.href);u.searchParams.delete('invite');window.history.replaceState({},'',u.toString());setAuthStatus('Convite aceito! Atualize os pets para carregar o perfil compartilhado.');window.location.reload();}setAuthBusy(false);}}>Aceitar convite</button></Card>}</>;
+    if(page==='sharing') return <><div className="page-heading"><div><span className="eyebrow">FAMÍLIA PAWLY</span><h1>Compartilhar {profile.name||'pet'}</h1><p>Convide outra conta para acompanhar o mesmo animal, sem duplicar o cadastro.</p></div></div>{!session?<Card title="Entre na sua conta"><p>É necessário estar conectado para compartilhar um pet.</p><button className="btn btn-primary" onClick={()=>changePage('account')}>Ir para Conta e nuvem</button></Card>:pet._cloudOwnerId!==session.user.id?<Card title="Pet compartilhado"><p>Este perfil pertence a outra conta. Você está conectado como participante e pode acompanhar e atualizar os registros compartilhados.</p></Card>:<><Card title="Convidar outra pessoa"><form className="form-grid" onSubmit={createPetInvite}><label>E-mail da outra conta<input type="email" required value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="pessoa@email.com"/></label><button className="btn btn-primary" disabled={!cloudReady}>Criar convite e copiar link</button></form><p className="notice">O convite vale por 7 dias e só pode ser aceito por uma conta com o mesmo e-mail informado. Depois de criar, envie o link copiado pelo WhatsApp ou outro canal.</p></Card><Card title="Contas com acesso">{shareMembers.length?shareMembers.map(m=><div className="list-row" key={m.user_id}><div><b>Participante</b><p className="notice">{m.user_id}</p><small>Acesso para visualizar e editar registros</small></div><button className="small-btn" onClick={()=>removePetMember(m.user_id)}>Remover acesso</button></div>):<p className="muted">Este pet ainda não foi compartilhado.</p>}</Card><Card title="Convites pendentes">{shareInvites.length?shareInvites.map(i=><div className="list-row" key={i.id}><div><b>{i.invited_email}</b><p className="notice">Expira em {date(i.expires_at.slice(0,10))}</p></div><button className="small-btn" onClick={()=>revokePetInvite(i.id)}>Cancelar</button></div>):<p className="muted">Nenhum convite pendente.</p>}</Card></>}{shareStatus&&<p className="notice" role="status">{shareStatus}</p>}</>;
     if (page === 'timeline') { const rows=allRecords(); return <><div className="page-heading"><div><span className="eyebrow">HISTÓRICO</span><h1>Linha do tempo</h1><p>Todos os acontecimentos do pet ativo organizados por data.</p></div><button className="btn btn-primary" onClick={()=>openForm('health')}>+ Novo registro</button></div><Card title="Histórico completo">{rows.length?rows.map(x=><div className="list-row" key={x.id}><div><small>{x.category} · {date(x.date)}</small><b>{x.title}</b>{x.notes&&<p>{x.notes}</p>}</div></div>):<p className="muted">Ainda não há registros para mostrar.</p>}</Card></>; }
     if (page === 'search') { const q=searchTerm.trim().toLocaleLowerCase('pt-BR'); const rows=store.pets.flatMap(p=>allRecords(p)).filter(x=>!q||(x.title+' '+x.category+' '+x.notes+' '+x.petName).toLocaleLowerCase('pt-BR').includes(q)); return <><div className="page-heading"><div><span className="eyebrow">LOCALIZAR</span><h1>Buscar registros</h1><p>Pesquise em todos os pets, vacinas, consultas e observações.</p></div></div><Card title="Pesquisa"><input type="search" placeholder="Ex.: vacina, consulta, nome do pet..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>{q&&<p className="muted">{rows.length} resultado(s)</p>}{rows.map(x=><div className="list-row" key={x.petId+x.id}><div><small>{x.petName} · {x.category} · {date(x.date)}</small><b>{x.title}</b><p>{x.notes}</p></div></div>)}</Card></>; }
     if (page === 'reminders') return <><div className="page-heading"><div><span className="eyebrow">ORGANIZAÇÃO</span><h1>Central de lembretes</h1><p>Próximos cuidados e compromissos cadastrados para este pet.</p></div><button className="btn btn-primary" onClick={()=>openForm('event')}>+ Compromisso</button></div><Card title="Próximos 30 dias">{upcoming.length?upcoming.map(x=><div className="list-row" key={x.id}><div><b>{x.title}</b><p>{x.type} · {date(x.date)}</p></div><span className="badge">{daysUntil(x.date)<0?'Atrasado':daysUntil(x.date)===0?'Hoje':'Em '+daysUntil(x.date)+' dias'}</span></div>):<p className="muted">Nenhum lembrete nos próximos 30 dias.</p>}</Card><p className="notice">Os lembretes são exibidos dentro do aplicativo. A entrega de notificações em segundo plano depende do sistema e das permissões do dispositivo.</p></>;
@@ -341,7 +424,7 @@ function App() {
         <div className="nav-group-items">{group.items.map(([key,icon,label])=><button key={key} className={`nav-link ${page===key?'active':''}`} onClick={()=>changePage(key)}><span>{icon}</span>{label}</button>)}</div>
       </section>)}
     </nav><div className="sidebar-bottom"><div className="tip-card"><span>🌷</span><b>Pequenos cuidados, grandes momentos.</b><p>Registre cada detalhe da saúde.</p></div><div className="sidebar-foot">Pawly Pocket • Dados neste aparelho</div></div></aside>
-    {menuOpen&&<button className="overlay" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(v=>!v)} aria-label="Abrir menu">☰</button><div className="crumb">Pawly Pocket <span>/</span> <b>{navGroups.flatMap(group=>group.items).find(item=>item[0]===page)?.[2]|| (page==='home'?'Visão geral':'Perfil do pet')}</b></div><div className="top-actions"><button className="icon-btn" onClick={toggleDark}>◐</button><div className="top-avatar">🐶</div></div></header><div className="content">{content()}</div><footer className="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer></main>
+    {menuOpen&&<button className="overlay" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(v=>!v)} aria-label="Abrir menu">☰</button><div className="crumb">Pawly Pocket <span>/</span> <b>{navGroups.flatMap(group=>group.items).find(item=>item[0]===page)?.[2]|| (page==='home'?'Visão geral':page==='sharing'?'Compartilhar pet':page==='account'?'Conta e nuvem':'Perfil do pet')}</b></div><div className="top-actions"><button className="icon-btn" onClick={toggleDark}>◐</button><div className="top-avatar">🐶</div></div></header><div className="content">{content()}</div><footer className="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer></main>
     {modal&&<div className="modal-backdrop" onClick={()=>setModal('')}><form className="modal-card" onSubmit={saveForm} onClick={e=>e.stopPropagation()}><button type="button" className="modal-close" onClick={()=>setModal('')}>×</button>
       <h2>{modal==='pet'?(form._petId?'Editar pet':'Adicionar pet'):({heat:'Registrar início do cio',vaccine:'Registrar vacina',health:'Registro de saúde',event:'Novo compromisso',reproduction:'Registro reprodutivo'})[modal]}</h2>
       {modal==='pet'?<>
