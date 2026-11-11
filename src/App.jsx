@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as NativeApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -8,7 +9,13 @@ import { supabase } from './lib/supabase.js';
 
 const STORAGE_KEY = 'petal_data_v1';
 const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
-const PAWLY_WEB_URL = 'https://petal-git-rebuild-react-js-rubertts-projects.vercel.app/';
+const PAWLY_WEB_URL = 'https://petal-ruby.vercel.app';
+const PAWLY_NATIVE_REDIRECT = 'com.pawlypocket.app://login-callback/';
+const isEmptyStarterPet = p => {
+  const profile=p?.profile||{};
+  const hasProfile=Object.entries(profile).some(([key,value])=>!['sex','sterilized'].includes(key)&&String(value??'').trim()!==''&&!(key==='name'&&value==='Minha pet'));
+  return !hasProfile && !['vaccines','heat','health','reproduction','events'].some(key=>(p?.[key]||[]).length);
+};
 const blankPet = () => ({ id: crypto.randomUUID(), profile: { name: 'Minha pet', breed: '', birth: '', sex: 'Fêmea', weight: '', notes: '', photo: '', sterilized: 'Não', microchip: '' }, vaccines: [], heat: [], health: [], reproduction: [], events: [] });
 const todayISO = () => new Date().toISOString().slice(0,10);
 const addMonthsSafe = (value, months) => { const d=new Date(value+'T12:00:00'), day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+months); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); return d.toISOString().slice(0,10); };
@@ -64,6 +71,10 @@ function App() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authNewPassword, setAuthNewPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login');
   const [authBusy, setAuthBusy] = useState(false);
   const [authStatus, setAuthStatus] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -100,12 +111,37 @@ function App() {
       setSession(data?.session||null);
       setSessionLoading(false);
     }).catch(()=>setSessionLoading(false));
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,nextSession)=>{
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,nextSession)=>{
       setSession(nextSession||null);
       setSessionLoading(false);
+      if(event==='PASSWORD_RECOVERY'){
+        setAuthMode('reset');
+        setAuthStatus('Defina sua nova senha para recuperar o acesso.');
+      } else if(event==='SIGNED_IN' && authMode!=='reset') {
+        setAuthMode('login');
+      }
       if(!nextSession)setCloudReady(false);
     });
     return ()=>{active=false;subscription.unsubscribe();};
+  },[]);
+
+  React.useEffect(()=>{
+    if(!Capacitor.isNativePlatform())return;
+    let listener;
+    NativeApp.addListener('appUrlOpen',async({url})=>{
+      try{
+        const callback=new URL(url);
+        const invite=callback.searchParams.get('invite');
+        if(invite)setPendingInvite(invite);
+        const code=callback.searchParams.get('code');
+        const tokenHash=callback.searchParams.get('token_hash');
+        if(code){setAuthStatus('Finalizando autenticação...');const {error}=await supabase.auth.exchangeCodeForSession(code);if(error)throw error;setAuthStatus('Acesso confirmado. Bem-vindo ao Pawly!');}
+        else if(tokenHash){const type=callback.searchParams.get('type')||'signup';const {error}=await supabase.auth.verifyOtp({token_hash:tokenHash,type});if(error)throw error;setAuthStatus('E-mail confirmado com sucesso.');}
+        else if(callback.hash){const params=new URLSearchParams(callback.hash.slice(1));const access_token=params.get('access_token'),refresh_token=params.get('refresh_token');if(access_token&&refresh_token){const {error}=await supabase.auth.setSession({access_token,refresh_token});if(error)throw error;}}
+        await Browser.close().catch(()=>{});
+      }catch(error){setAuthStatus(error?.message||'Não foi possível concluir o retorno de autenticação.');await Browser.close().catch(()=>{});}
+    }).then(handle=>{listener=handle;}).catch(error=>console.warn('Falha ao registrar retorno de autenticação:',error));
+    return ()=>{listener?.remove();};
   },[]);
 
   React.useEffect(()=>{
@@ -122,7 +158,7 @@ function App() {
         if(raw && !localStorage.getItem(migrationKey)){
           const local=JSON.parse(raw);
           const localPets=Array.isArray(local.pets)?local.pets:[];
-          const owned=localPets.filter(p=>!p._cloudOwnerId||p._cloudOwnerId===user.id);
+          const owned=localPets.filter(p=>(!p._cloudOwnerId||p._cloudOwnerId===user.id)&&!isEmptyStarterPet(p));
           const payload=owned.map(p=>{
             const id=isUuid(p.id)?p.id:crypto.randomUUID();
             const data={...p,id};delete data._cloudOwnerId;delete data._sharedRole;
@@ -178,6 +214,7 @@ function App() {
     (async()=>{
       for(const p of store.pets){
         if(cancelled)return;
+        if(isEmptyStarterPet(p))continue;
         const data={...p};delete data._cloudOwnerId;delete data._sharedRole;delete data._cloudUpdatedAt;
         if(p._cloudOwnerId && p._cloudOwnerId!==session.user.id){
           const {error}=await supabase.from('pets').update({name:data.profile?.name||'Minha pet',data,updated_at:new Date().toISOString()}).eq('id',p.id);
@@ -376,14 +413,22 @@ function App() {
     return ()=>{cancelled=true;};
   },[upcoming,pet.id,nativeNotificationsEnabled,notificationChannelId,notificationPrefs.sound,notificationPrefs.vibration]);
 
+  const getAuthRedirect = () => {
+    const base=Capacitor.isNativePlatform()?PAWLY_NATIVE_REDIRECT:(window.location.origin+'/');
+    const params=new URLSearchParams();
+    if(pendingInvite)params.set('invite',pendingInvite);
+    return base+(params.size?'?'+params.toString():'');
+  };
   const signInWithGoogle = async () => {
-    if(Capacitor.isNativePlatform()){setAuthStatus('O login Google no Android ainda precisa do retorno OAuth nativo. Use e-mail e senha por enquanto; a configuração segura do app será concluída antes de liberar esse botão.');return;}
     try{
-      setAuthBusy(true);setAuthStatus('Abrindo acesso Google...');
-      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+(pendingInvite?'?invite='+encodeURIComponent(pendingInvite):'')}});
+      setAuthBusy(true);setAuthStatus('Conectando com o Google...');
+      const {data,error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:getAuthRedirect(),skipBrowserRedirect:Capacitor.isNativePlatform(),queryParams:{prompt:'select_account'}}});
       if(error)throw error;
-    }catch(error){setAuthStatus(error?.message||'Não foi possível iniciar o login Google.');}
-    finally{setAuthBusy(false);}
+      if(Capacitor.isNativePlatform()){
+        if(!data?.url)throw new Error('O Google não retornou o endereço de autenticação.');
+        await Browser.open({url:data.url,presentationStyle:'fullscreen'});
+      }
+    }catch(error){setAuthStatus(error?.message||'Não foi possível iniciar o login Google.');setAuthBusy(false);}
   };
   const signInWithEmail = async e => {
     e.preventDefault();if(authBusy)return;
@@ -395,14 +440,34 @@ function App() {
     }catch(error){setAuthStatus(error?.message||'Não foi possível entrar.');}
     finally{setAuthBusy(false);}
   };
-  const signUpWithEmail = async () => {
-    if(authBusy)return;
+  const signUpWithEmail = async e => {
+    e?.preventDefault();if(authBusy)return;
+    if(authPassword.length<8){setAuthStatus('Use uma senha com pelo menos 8 caracteres.');return;}
+    if(authPassword!==authConfirmPassword){setAuthStatus('As senhas não conferem.');return;}
     try{
       setAuthBusy(true);setAuthStatus('Criando sua conta...');
-      const {data,error}=await supabase.auth.signUp({email:authEmail.trim(),password:authPassword,options:{emailRedirectTo:(Capacitor.isNativePlatform()?PAWLY_WEB_URL:window.location.origin)+(pendingInvite?'?invite='+encodeURIComponent(pendingInvite):'')}});
+      const {data,error}=await supabase.auth.signUp({email:authEmail.trim().toLowerCase(),password:authPassword,options:{emailRedirectTo:getAuthRedirect(),data:{full_name:authFullName.trim(),name:authFullName.trim()}}});
       if(error)throw error;
-      setAuthStatus(data.session?'Conta criada e conectada.':'Conta criada. Confira seu e-mail para confirmar o cadastro.');
+      setAuthStatus(data.session?'Conta criada e conectada.':'Conta criada. Enviamos um link de confirmação para seu e-mail. Abra o link para ativar a conta.');
     }catch(error){setAuthStatus(error?.message||'Não foi possível criar a conta.');}
+    finally{setAuthBusy(false);}
+  };
+  const resendSignupConfirmation = async () => {
+    if(!authEmail.trim()){setAuthStatus('Informe seu e-mail para reenviar a confirmação.');return;}
+    try{setAuthBusy(true);setAuthStatus('Reenviando confirmação...');const {error}=await supabase.auth.resend({type:'signup',email:authEmail.trim().toLowerCase(),options:{emailRedirectTo:getAuthRedirect()}});if(error)throw error;setAuthStatus('Novo e-mail de confirmação enviado. Confira também o spam.');}
+    catch(error){setAuthStatus(error?.message||'Não foi possível reenviar o e-mail.');}
+    finally{setAuthBusy(false);}
+  };
+  const requestPasswordReset = async e => {
+    e?.preventDefault();if(!authEmail.trim()){setAuthStatus('Informe o e-mail da sua conta.');return;}
+    try{setAuthBusy(true);setAuthStatus('Enviando link para redefinir sua senha...');const {error}=await supabase.auth.resetPasswordForEmail(authEmail.trim().toLowerCase(),{redirectTo:getAuthRedirect()});if(error)throw error;setAuthStatus('Se a conta existir, você receberá um link para criar uma nova senha.');}
+    catch(error){setAuthStatus(error?.message||'Não foi possível solicitar a redefinição.');}
+    finally{setAuthBusy(false);}
+  };
+  const saveRecoveredPassword = async e => {
+    e?.preventDefault();if(authNewPassword.length<8){setAuthStatus('Use uma senha com pelo menos 8 caracteres.');return;}
+    try{setAuthBusy(true);const {error}=await supabase.auth.updateUser({password:authNewPassword});if(error)throw error;setAuthNewPassword('');setAuthMode('login');setAuthStatus('Senha alterada com sucesso. Sua conta está pronta.');}
+    catch(error){setAuthStatus(error?.message||'Não foi possível alterar a senha. Abra novamente o link de recuperação.');}
     finally{setAuthBusy(false);}
   };
   const signOutAccount = async () => {
@@ -422,10 +487,10 @@ function App() {
       const token=crypto.randomUUID();
       const {error}=await supabase.from('pet_invitations').insert({pet_id:pet.id,invited_email:email,token,invited_by:session.user.id});
       if(error)throw error;
-      const inviteOrigin=Capacitor.isNativePlatform()?PAWLY_WEB_URL:window.location.origin;
-      const link=inviteOrigin+'/?invite='+encodeURIComponent(token);
-      try{await navigator.clipboard.writeText(link);setShareStatus('Convite criado e link copiado. Envie para '+email+'.');}
-      catch{setShareStatus('Convite criado. Copie este link: '+link);}
+      const link=PAWLY_WEB_URL+'/?invite='+encodeURIComponent(token);
+      let shared=false;
+      if(navigator.share){try{await navigator.share({title:'Convite Pawly Pocket',text:'Você foi convidado para acompanhar um pet comigo no Pawly Pocket.',url:link});shared=true;}catch{}}
+      if(!shared){try{await navigator.clipboard.writeText(link);setShareStatus('Convite criado e link copiado. Envie para '+email+'.');}catch{setShareStatus('Convite criado. Copie este link: '+link);}}else setShareStatus('Convite criado e compartilhado. A pessoa deve entrar com '+email+'.');
       setInviteEmail('');
       const {data}=await supabase.from('pet_invitations').select('id,invited_email,expires_at,accepted_at').eq('pet_id',pet.id).is('accepted_at',null);
       setShareInvites(data||[]);
@@ -594,21 +659,26 @@ function App() {
     return <Card title="Em migração"><p>Esta área será portada para React na próxima etapa.</p></Card>;
   };
   if(sessionLoading) return <div className={`pawly-auth-screen ${dark?'theme-dark':''}`}><div className="pawly-auth-loading"><span className="pawly-auth-mark">🐾</span><b>Pawly Pocket</b><p>Preparando seu espaço...</p></div></div>;
+  if(session?.user && authMode==='reset') return <div className={`pawly-auth-screen ${dark?'theme-dark':''}`}><section className="pawly-auth-card"><div className="pawly-auth-brand"><span className="pawly-auth-mark">🐾</span><div><b>Pawly Pocket</b><small>Recuperação de acesso</small></div></div><h1>Crie uma nova senha.</h1><form className="pawly-auth-form" onSubmit={saveRecoveredPassword}><label>Nova senha<input type="password" autoComplete="new-password" minLength="8" required value={authNewPassword} onChange={e=>setAuthNewPassword(e.target.value)} placeholder="Mínimo de 8 caracteres"/></label><button className="btn btn-primary" disabled={authBusy}>{authBusy?'Salvando...':'Salvar nova senha'}</button></form>{authStatus&&<p className="pawly-auth-status" role="status">{authStatus}</p>}</section></div>;
   if(!session?.user) return <div className={`pawly-auth-screen ${dark?'theme-dark':''}`}>
     <section className="pawly-auth-card">
       <div className="pawly-auth-brand"><span className="pawly-auth-mark">🐾</span><div><b>Pawly Pocket</b><small>Seu pet. Sua vida. Tudo no bolso.</small></div></div>
-      <span className="eyebrow">BEM-VINDO AO PAWLY</span>
-      <h1>Seu cuidado começa aqui.</h1>
-      <p className="pawly-auth-intro">Entre na sua conta para acessar os perfis, históricos e lembretes dos seus pets em qualquer aparelho.</p>
-      {pendingInvite&&<div className="pawly-auth-invite">🐾 Você recebeu um convite para acompanhar um pet. Entre com o e-mail que recebeu o convite.</div>}
-      {!Capacitor.isNativePlatform()&&<button className="pawly-auth-google" disabled={authBusy} onClick={signInWithGoogle}>Continuar com Google</button>}
-      <div className="pawly-auth-separator"><span>ou entre com e-mail</span></div>
-      <form className="pawly-auth-form" onSubmit={signInWithEmail}>
+      <span className="eyebrow">{authMode==='signup'?'CADASTRO GRATUITO':authMode==='forgot'?'RECUPERAR ACESSO':'BEM-VINDO AO PAWLY'}</span>
+      <h1>{authMode==='signup'?'Crie sua conta.':authMode==='forgot'?'Vamos recuperar seu acesso.':'Seu cuidado começa aqui.'}</h1>
+      <p className="pawly-auth-intro">{authMode==='signup'?'Cadastre-se para guardar os dados dos seus pets e compartilhar o acompanhamento com outras pessoas.':authMode==='forgot'?'Informe o e-mail da sua conta. Enviaremos um link seguro para redefinir a senha.':'Entre na sua conta para acessar os perfis, históricos e lembretes dos seus pets em qualquer aparelho.'}</p>
+      {pendingInvite&&<div className="pawly-auth-invite">🐾 Você recebeu um convite para acompanhar um pet. Use exatamente o e-mail para o qual o convite foi enviado.</div>}
+      {authMode!=='forgot'&&<button className="pawly-auth-google" disabled={authBusy} onClick={signInWithGoogle}>{authBusy?'Aguarde...':'Continuar com Google'}</button>}
+      {authMode!=='forgot'&&<div className="pawly-auth-separator"><span>ou use seu e-mail</span></div>}
+      <form className="pawly-auth-form" onSubmit={authMode==='signup'?signUpWithEmail:authMode==='forgot'?requestPasswordReset:signInWithEmail}>
+        {authMode==='signup'&&<label>Seu nome<input type="text" autoComplete="name" value={authFullName} onChange={e=>setAuthFullName(e.target.value)} placeholder="Como podemos te chamar?"/></label>}
         <label>E-mail<input type="email" autoComplete="email" required value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="voce@email.com"/></label>
-        <label>Senha<input type="password" autoComplete="current-password" required minLength="6" value={authPassword} onChange={e=>setAuthPassword(e.target.value)} placeholder="Sua senha"/></label>
-        <button className="btn btn-primary" disabled={authBusy}>{authBusy?'Aguarde...':'Entrar na minha conta'}</button>
-        <button type="button" className="pawly-auth-create" disabled={authBusy} onClick={signUpWithEmail}>Criar uma conta gratuita</button>
+        {authMode!=='forgot'&&<label>Senha<input type="password" autoComplete={authMode==='signup'?'new-password':'current-password'} required minLength={authMode==='signup'?8:6} value={authPassword} onChange={e=>setAuthPassword(e.target.value)} placeholder={authMode==='signup'?'Mínimo de 8 caracteres':'Sua senha'}/></label>}
+        {authMode==='signup'&&<label>Confirme a senha<input type="password" autoComplete="new-password" required minLength="8" value={authConfirmPassword} onChange={e=>setAuthConfirmPassword(e.target.value)} placeholder="Digite a senha novamente"/></label>}
+        <button className="btn btn-primary" disabled={authBusy}>{authBusy?'Aguarde...':authMode==='signup'?'Criar minha conta':authMode==='forgot'?'Enviar link de recuperação':'Entrar na minha conta'}</button>
       </form>
+      {authMode==='signup'&&<button type="button" className="pawly-auth-create" disabled={authBusy} onClick={resendSignupConfirmation}>Reenviar e-mail de confirmação</button>}
+      {authMode==='login'&&<><button type="button" className="pawly-auth-create" disabled={authBusy} onClick={()=>setAuthMode('signup')}>Criar uma conta gratuita</button><button type="button" className="pawly-auth-create" disabled={authBusy} onClick={()=>setAuthMode('forgot')}>Esqueci minha senha</button><button type="button" className="pawly-auth-create" disabled={authBusy} onClick={resendSignupConfirmation}>Reenviar confirmação de e-mail</button></>}
+      {authMode!=='login'&&<button type="button" className="pawly-auth-create" disabled={authBusy} onClick={()=>{setAuthMode('login');setAuthStatus('');}}>Voltar para entrar</button>}
       {authStatus&&<p className="pawly-auth-status" role="status">{authStatus}</p>}
       <p className="pawly-auth-privacy">🔒 Seus dados ficam vinculados à sua conta. Ao sair, eles deixam de aparecer neste aparelho até você entrar novamente.</p>
     </section>
