@@ -128,8 +128,8 @@ function App() {
       let permission=await LocalNotifications.checkPermissions();
       if(permission.display!=='granted')permission=await LocalNotifications.requestPermissions();
       if(permission.display!=='granted'){alert('Permissão de notificações não concedida.');return;}
-      if(Capacitor.getPlatform()==='android') await LocalNotifications.createChannel({id:notificationChannelId,name:'Lembretes Pawly',description:'Cuidados e compromissos dos pets',importance:5,visibility:1,sound:notificationPrefs.sound?'pawly_chime.wav':undefined,vibration:notificationPrefs.vibration});
-      await LocalNotifications.schedule({notifications:[{id:987654,title:'Pawly Pocket · teste',body:'Tudo certo! Seus lembretes estão configurados.',schedule:{at:new Date(Date.now()+4000)},channelId:notificationChannelId,sound:notificationPrefs.sound?'pawly_chime.wav':undefined}]});
+      if(Capacitor.getPlatform()==='android') await LocalNotifications.createChannel({id:notificationChannelId,name:'Lembretes Pawly',description:'Cuidados e compromissos dos pets',importance:5,visibility:1,sound:notificationPrefs.sound?(Capacitor.getPlatform()==='android'?'pawly_chime.wav':'default'):undefined,vibration:notificationPrefs.vibration});
+      await LocalNotifications.schedule({notifications:[{id:987654,title:'Pawly Pocket · teste',body:'Tudo certo! Seus lembretes estão configurados.',schedule:{at:new Date(Date.now()+4000)},channelId:notificationChannelId,sound:notificationPrefs.sound?(Capacitor.getPlatform()==='android'?'pawly_chime.wav':'default'):undefined}]});
       alert('Aviso de teste agendado para daqui a 4 segundos.');
     } catch(error) { console.warn(error);alert('Não foi possível enviar o aviso de teste. Confira as permissões do aparelho.'); }
   };
@@ -140,7 +140,7 @@ function App() {
       try {
         const permission=await LocalNotifications.checkPermissions();
         if(permission.display!=='granted') return;
-        if(Capacitor.getPlatform()==='android') await LocalNotifications.createChannel({id:notificationChannelId,name:'Lembretes Pawly',description:'Cuidados e compromissos dos pets',importance:5,visibility:1,sound:notificationPrefs.sound?'pawly_chime.wav':undefined,vibration:notificationPrefs.vibration});
+        if(Capacitor.getPlatform()==='android') await LocalNotifications.createChannel({id:notificationChannelId,name:'Lembretes Pawly',description:'Cuidados e compromissos dos pets',importance:5,visibility:1,sound:notificationPrefs.sound?(Capacitor.getPlatform()==='android'?'pawly_chime.wav':'default'):undefined,vibration:notificationPrefs.vibration});
         await LocalNotifications.cancelAll();
         const due=upcoming.filter(x=>daysUntil(x.date)>=-1 && daysUntil(x.date)<=30);
         if(!due.length || cancelled) return;
@@ -148,7 +148,7 @@ function App() {
           let hash=0; for(const ch of String(x.id||x.title)) hash=((hash<<5)-hash)+ch.charCodeAt(0),hash|=0;
           const at=new Date(x.date+'T09:00:00');
           if(at.getTime()<=Date.now()) at.setTime(Date.now()+60000);
-          return {id:Math.abs(hash)||1,title:'Pawly Pocket · '+(x.type||'Lembrete'),body:x.title||x.name||'Cuidado agendado',schedule:{at},channelId:notificationChannelId,sound:notificationPrefs.sound?'pawly_chime.wav':undefined};
+          return {id:Math.abs(hash)||1,title:'Pawly Pocket · '+(x.type||'Lembrete'),body:x.title||x.name||'Cuidado agendado',schedule:{at},channelId:notificationChannelId,sound:notificationPrefs.sound?(Capacitor.getPlatform()==='android'?'pawly_chime.wav':'default'):undefined};
         });
         await LocalNotifications.schedule({notifications});
       } catch(error) { console.warn('Não foi possível atualizar os lembretes nativos.',error); }
