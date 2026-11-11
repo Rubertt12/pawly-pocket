@@ -13,7 +13,7 @@ Aplicativo responsivo para organizar o cuidado e o histórico dos pets. A branch
 ## Funcionalidades já portadas para React
 
 - Visão geral com indicadores e card de acompanhamento do cio.
-- Cadastro de múltiplos pets, edição de perfil e foto.
+- Cadastro de múltiplos pets, edição de perfil, captura por câmera nativa e seleção da galeria.
 - Carteira de vacinação com dose, reforço e lembretes recorrentes.
 - Controle de cio, histórico editável e estimativa baseada no histórico.
 - Saúde, medicamentos, consultas, peso e exames.
@@ -53,12 +53,11 @@ O workflow GitHub Actions `React build validation` executa `npm install` e `npm 
 
 ## Preparação para Android e iOS\n\n- Capacitor 8.6 configurado com `@capacitor/core`, CLI, plataformas Android/iOS, identificador `com.pawlypocket.app` e saída web em `dist`.\n- Para gerar os projetos nativos, instalar as dependências e executar `npm run build`, `npm run cap:add:android` e `npm run cap:add:ios`; depois usar `npm run cap:sync`.\n- Android requer Android Studio e Android SDK. iOS requer macOS, Xcode e Xcode Command Line Tools.\n- As pastas nativas ainda não foram geradas nesta etapa; a configuração está preparada, mas não existem APK/AAB ou IPA prontos.\n\n## Próximas etapas
 
-- Conferir o resultado do build automatizado e corrigir erros.
-- Testes funcionais com backup real da versão antiga.
+- Testar captura pela câmera e seleção da galeria em Android físico.
+- Tratar a recuperação do resultado da câmera caso o Android encerre o processo em segundo plano.
+- Testar backup completo e restauração com arquivos reais.
 - Validar navegação, acessibilidade e responsividade em aparelhos reais.
-- Completar a migração dos fluxos que ainda diferem da versão anterior.
-- Preparar Capacitor e gerar builds Android/iOS.
-- Só então criar preview público e planejar substituição da versão web oficial.
+- Gerar o projeto Android e preparar um APK de teste após validação local.
 
 ## Privacidade e observação veterinária
 
