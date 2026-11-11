@@ -323,7 +323,7 @@ function App() {
     if(Capacitor.isNativePlatform()){setAuthStatus('O login Google no Android ainda precisa do retorno OAuth nativo. Use e-mail e senha por enquanto; a configuração segura do app será concluída antes de liberar esse botão.');return;}
     try{
       setAuthBusy(true);setAuthStatus('Abrindo acesso Google...');
-      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:PAWLY_WEB_URL}});
+      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
       if(error)throw error;
     }catch(error){setAuthStatus(error?.message||'Não foi possível iniciar o login Google.');}
     finally{setAuthBusy(false);}
@@ -342,7 +342,7 @@ function App() {
     if(authBusy)return;
     try{
       setAuthBusy(true);setAuthStatus('Criando sua conta...');
-      const {data,error}=await supabase.auth.signUp({email:authEmail.trim(),password:authPassword,options:{emailRedirectTo:PAWLY_WEB_URL}});
+      const {data,error}=await supabase.auth.signUp({email:authEmail.trim(),password:authPassword,options:{emailRedirectTo:window.location.origin}});
       if(error)throw error;
       setAuthStatus(data.session?'Conta criada e conectada.':'Conta criada. Confira seu e-mail para confirmar o cadastro.');
     }catch(error){setAuthStatus(error?.message||'Não foi possível criar a conta.');}
@@ -363,7 +363,7 @@ function App() {
       const token=crypto.randomUUID();
       const {error}=await supabase.from('pet_invitations').insert({pet_id:pet.id,invited_email:email,token,invited_by:session.user.id});
       if(error)throw error;
-      const link=PAWLY_WEB_URL+'?invite='+encodeURIComponent(token);
+      const inviteOrigin=Capacitor.isNativePlatform()?PAWLY_WEB_URL:window.location.origin;\n      const link=inviteOrigin+'/?invite='+encodeURIComponent(token);
       try{await navigator.clipboard.writeText(link);setShareStatus('Convite criado e link copiado. Envie para '+email+'.');}
       catch{setShareStatus('Convite criado. Copie este link: '+link);}
       setInviteEmail('');
