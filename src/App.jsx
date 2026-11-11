@@ -28,6 +28,12 @@ const nav = [
   ['health','✚','Saúde e histórico'],['reproduction','♧','Reprodução'],['calendar','▦','Calendário'],
   ['pets','♧','Meus pets'],['timeline','◷','Linha do tempo'],['search','⌕','Buscar registros'],['reminders','♧','Central de lembretes'],['documents','▤','Documentos'],['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']
 ];
+const navGroups = [
+  {id:'health',title:'Saúde',icon:'♡',items:[['vaccines','♡','Vacinação'],['heat','◉','Controle de cio'],['health','✚','Saúde e histórico']]},
+  {id:'routine',title:'Rotina',icon:'▦',items:[['reproduction','♧','Reprodução'],['calendar','▦','Calendário'],['reminders','♧','Central de lembretes']]},
+  {id:'records',title:'Pets e histórico',icon:'◷',items:[['pets','♧','Meus pets'],['profile','♙','Perfil do pet'],['timeline','◷','Linha do tempo'],['search','⌕','Buscar registros'],['documents','▤','Documentos']]},
+  {id:'settings',title:'Configurações',icon:'⚙',items:[['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']]}
+];
 const date = value => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 const daysBetween = value => Math.floor((new Date().setHours(0,0,0,0) - new Date(value+'T12:00:00').getTime()) / 86400000);
 const daysUntil = value => Math.ceil((new Date(value+'T12:00:00').getTime() - new Date().setHours(0,0,0,0)) / 86400000);
@@ -36,6 +42,7 @@ function App() {
   const [store, setStore] = useState(readStore);
   const [page, setPage] = useState('home');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openNavGroup, setOpenNavGroup] = useState('health');
   const [modal, setModal] = useState('');
   const [form, setForm] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -156,7 +163,12 @@ function App() {
     updatePet(p => ({ ...p, [key]: form.id ? (p[key]||[]).map(x=>x.id===form.id?entry:x) : [...(p[key]||[]), entry] }));
     setModal('');
   };
-  const changePage = key => { setPage(key); setMenuOpen(false); };
+  const changePage = key => {
+    setPage(key);
+    const group = navGroups.find(g=>g.items.some(item=>item[0]===key));
+    if(group) setOpenNavGroup(group.id);
+    setMenuOpen(false);
+  };
   const toggleDark = () => setDark(v => { localStorage.setItem('pawly_theme', v ? 'light' : 'dark'); return !v; });
   const addPet = () => { setForm({...blankPet().profile,_petId:null}); setModal('pet'); };
   const blobToDataUrl = blob => new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);});
@@ -254,8 +266,16 @@ function App() {
     return <Card title="Em migração"><p>Esta área será portada para React na próxima etapa.</p></Card>;
   };
   return <div className={`app-shell ${dark?'theme-dark':''}`}>
-    <aside className={`sidebar ${menuOpen?'open':''}`}><a className="brand" href="#" onClick={e=>{e.preventDefault();changePage('home')}}><span className="brand-mark">🐾</span><span><b>Pawly Pocket</b><small>Seu pet. Sua vida. Tudo no bolso.</small></span></a><div className="pet-mini"><div className="pet-avatar">{profile.photo?<img src={profile.photo}/>: '🐶'}</div><div><b>{profile.name||'Minha pet'}</b><small>Perfil da pet</small></div><select aria-label="Selecionar pet" value={pet.id} onChange={e=>setStore(s=>{const n={...s,activePetId:e.target.value};localStorage.setItem(STORAGE_KEY,JSON.stringify(n));return n;})}>{store.pets.map(p=><option key={p.id} value={p.id}>{p.profile?.name||'Pet'}</option>)}</select><button className="small-btn" onClick={addPet}>+</button></div><div className="nav-label">MENU PRINCIPAL</div><nav className="nav">{nav.map(([key,icon,label])=><button key={key} className={`nav-link ${page===key?'active':''}`} onClick={()=>changePage(key)}><span>{icon}</span>{label}</button>)}<button className={`nav-link ${page==='profile'?'active':''}`} onClick={()=>changePage('profile')}><span>♙</span>Perfil do pet</button></nav><div className="sidebar-bottom"><div className="tip-card"><span>🌷</span><b>Pequenos cuidados, grandes momentos.</b><p>Registre cada detalhe da saúde.</p></div><div className="sidebar-foot">Pawly Pocket • Dados neste aparelho</div></div></aside>
-    {menuOpen&&<button className="overlay" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(v=>!v)} aria-label="Abrir menu">☰</button><div className="crumb">Pawly Pocket <span>/</span> <b>{nav.find(x=>x[0]===page)?.[2]||'Perfil do pet'}</b></div><div className="top-actions"><button className="icon-btn" onClick={toggleDark}>◐</button><div className="top-avatar">🐶</div></div></header><div className="content">{content()}</div><footer className="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer></main>
+    <aside className={`sidebar ${menuOpen?'open':''}`}><a className="brand" href="#" onClick={e=>{e.preventDefault();changePage('home')}}><span className="brand-mark">🐾</span><span><b>Pawly Pocket</b><small>Seu pet. Sua vida. Tudo no bolso.</small></span></a><div className="pet-mini"><div className="pet-avatar">{profile.photo?<img src={profile.photo}/>: '🐶'}</div><div><b>{profile.name||'Minha pet'}</b><small>Perfil da pet</small></div><select aria-label="Selecionar pet" value={pet.id} onChange={e=>setStore(s=>{const n={...s,activePetId:e.target.value};localStorage.setItem(STORAGE_KEY,JSON.stringify(n));return n;})}>{store.pets.map(p=><option key={p.id} value={p.id}>{p.profile?.name||'Pet'}</option>)}</select><button className="small-btn" onClick={addPet}>+</button></div><div className="nav-label">MENU PRINCIPAL</div><nav className="nav">
+      <button className={`nav-link nav-home ${page==='home'?'active':''}`} onClick={()=>changePage('home')}><span>⌂</span>Visão geral</button>
+      {navGroups.map(group=><section key={group.id} className={`nav-group ${openNavGroup===group.id?'expanded':''}`}>
+        <button type="button" className="nav-group-toggle" aria-expanded={openNavGroup===group.id} onClick={()=>setOpenNavGroup(current=>current===group.id?'':group.id)}>
+          <span className="nav-group-icon">{group.icon}</span><span>{group.title}</span><span className="nav-group-chevron">⌄</span>
+        </button>
+        <div className="nav-group-items">{group.items.map(([key,icon,label])=><button key={key} className={`nav-link ${page===key?'active':''}`} onClick={()=>changePage(key)}><span>{icon}</span>{label}</button>)}</div>
+      </section>)}
+    </nav><div className="sidebar-bottom"><div className="tip-card"><span>🌷</span><b>Pequenos cuidados, grandes momentos.</b><p>Registre cada detalhe da saúde.</p></div><div className="sidebar-foot">Pawly Pocket • Dados neste aparelho</div></div></aside>
+    {menuOpen&&<button className="overlay" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(v=>!v)} aria-label="Abrir menu">☰</button><div className="crumb">Pawly Pocket <span>/</span> <b>{nav.flatMap(x=>x.items).find(x=>x[0]===page)?.[2]|| (page==='home'?'Visão geral':'Perfil do pet')}</b></div><div className="top-actions"><button className="icon-btn" onClick={toggleDark}>◐</button><div className="top-avatar">🐶</div></div></header><div className="content">{content()}</div><footer className="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer></main>
     {modal&&<div className="modal-backdrop" onClick={()=>setModal('')}><form className="modal-card" onSubmit={saveForm} onClick={e=>e.stopPropagation()}><button type="button" className="modal-close" onClick={()=>setModal('')}>×</button>
       <h2>{modal==='pet'?(form._petId?'Editar pet':'Adicionar pet'):({heat:'Registrar início do cio',vaccine:'Registrar vacina',health:'Registro de saúde',event:'Novo compromisso',reproduction:'Registro reprodutivo'})[modal]}</h2>
       {modal==='pet'?<>
