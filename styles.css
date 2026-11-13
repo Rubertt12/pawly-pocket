@@ -275,3 +275,9 @@
   .panel,.pet-id-card{box-shadow:none!important;break-inside:avoid}
   .pet-id-layout{display:block}
 }
+
+.connection-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;letter-spacing:.2px;background:var(--mint);color:var(--green-dark);white-space:nowrap}
+.connection-pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.connection-pill.offline{background:#fff0e7;color:#9a623e}
+.theme-dark .connection-pill.offline{background:#493426;color:#f1bd91}
+@media(max-width:420px){.connection-pill{padding:6px 8px;font-size:9px}}
