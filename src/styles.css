@@ -535,3 +535,99 @@ body{overflow-x:hidden}
   .app-shell .calendar-day-name{font-size:8px}
   .app-shell .calendar-cell{min-height:49px}
 }
+
+
+/* Pawly Pocket — signature visual direction */
+.app-shell{--pawly-sage:#78977d;--pawly-forest:#385743;--pawly-cream:#f7f6ef;--pawly-blush:#f3e8dc}
+.app-shell .sidebar{background:linear-gradient(180deg,#fffefa 0%,#f8faf5 100%);border-right:1px solid #e8eee5}
+.app-shell .brand{gap:11px;margin-bottom:28px}
+.app-shell .brand-mark{display:grid;place-items:center;width:45px;height:45px;border-radius:16px;background:linear-gradient(145deg,#91ad92,#5d8066);box-shadow:0 9px 18px rgba(73,110,84,.2);font-size:0}
+.app-shell .brand-mark:after{content:"";width:22px;height:22px;background:#fff;clip-path:path("M11 21 C8 21 4 18 4 14 C4 11 6 9 8 9 C9 9 10 10 11 12 C12 10 13 9 15 9 C18 9 19 12 18 15 C17 18 14 21 11 21 M5 7 C2 7 1 4 3 2 C5 0 8 2 8 5 C8 6 7 7 5 7 M11 5 C8 4 8 1 11 0 C14 0 15 4 13 6 C12 6 11 6 11 5 M18 7 C16 7 15 5 16 3 C18 1 21 2 21 5 C21 7 20 8 18 7")}
+.app-shell .brand b{font-size:22px;letter-spacing:-1.2px}
+.app-shell .pet-mini{background:#f4f7f1;border-color:#e7eee4}
+.app-shell .nav-label{font-size:9px;font-weight:800;letter-spacing:1.8px}
+.app-shell .nav-group-toggle{font-weight:750;letter-spacing:.1px}
+.app-shell .nav-link{min-height:42px}
+.app-shell .main{background:radial-gradient(ellipse at 92% 0%,rgba(226,237,222,.3),transparent 32%),#fafbf8}
+.app-shell .topbar{background:rgba(255,255,252,.86)}
+.app-shell .content{padding-top:clamp(28px,3.6vw,50px)}
+.app-shell .page-heading{margin-bottom:27px}
+.app-shell .page-heading .eyebrow{display:inline-flex;align-items:center;gap:8px;font-weight:800}
+.app-shell .page-heading h1{font-size:clamp(27px,2.5vw,35px);letter-spacing:-1.45px}
+.app-shell .welcome{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr);align-items:center;overflow:hidden;min-height:258px;padding:30px 38px;margin-bottom:22px;border-radius:27px;border:1px solid #e3eadd;background:linear-gradient(112deg,#edf4e9 0%,#f3f5eb 52%,#f6ece2 100%);box-shadow:0 16px 38px rgba(57,82,58,.065)}
+.app-shell .welcome-copy{position:relative;z-index:2;max-width:480px}
+.app-shell .welcome .eyebrow{display:flex;align-items:center;gap:8px;color:#718c73;font-size:9px;font-weight:850;letter-spacing:1.7px}
+.app-shell .eyebrow-dot{width:7px;height:7px;border-radius:50%;background:#8ca98e;box-shadow:0 0 0 4px rgba(140,169,142,.14)}
+.app-shell .welcome h2{font-size:clamp(25px,3vw,37px);line-height:1.12;letter-spacing:-1.5px;color:#344d39;margin:15px 0 11px}
+.app-shell .welcome h2 em{font-family:Georgia,serif;font-weight:500;color:#78977d}
+.app-shell .welcome p{max-width:390px;font-size:12px;line-height:1.8;color:#78877a}
+.app-shell .welcome-cta{display:inline-flex;align-items:center;gap:18px;margin-top:18px;padding:11px 15px;border:0;border-radius:12px;background:#587a60;color:white;font-size:10px;font-weight:800;box-shadow:0 8px 16px rgba(75,112,81,.16)}
+.app-shell .welcome-cta span{font-size:15px;line-height:10px}
+.app-shell .welcome-art{position:relative;display:grid;place-items:center;min-height:205px;font-size:0;padding:0}
+.app-shell .hero-sun{position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.48);right:13%;top:-20px}
+.app-shell .hero-pet-circle{position:relative;z-index:1;display:grid;place-items:center;width:190px;height:190px;border-radius:50%;background:linear-gradient(145deg,#dce9d8,#f3e6d7);box-shadow:inset 0 0 0 12px rgba(255,255,255,.3),0 16px 30px rgba(68,91,68,.12);transform:rotate(-4deg)}
+.app-shell .hero-pet-circle svg{width:175px;height:167px;filter:drop-shadow(0 8px 6px rgba(78,91,68,.1))}
+.app-shell .hero-leaf{position:absolute;z-index:0;width:35px;height:70px;border-radius:100% 0 100% 0;background:#a8bea2;opacity:.8;transform:rotate(28deg)}
+.app-shell .hero-leaf-one{right:9%;bottom:24px}
+.app-shell .hero-leaf-two{left:13%;top:24px;transform:rotate(-38deg) scale(.75);background:#d6bba1}
+.app-shell .hero-float{position:absolute;z-index:2;display:grid;place-items:center;border:1px solid rgba(255,255,255,.8);box-shadow:0 10px 24px rgba(61,83,62,.1);background:rgba(255,255,255,.88);border-radius:16px}
+.app-shell .hero-float-heart{top:20px;right:13%;width:43px;height:43px;color:#c98e85;font-size:25px}
+.app-shell .hero-float-paw{left:12%;bottom:25px;width:42px;height:42px;font-size:19px}
+.app-shell .hero-note{position:absolute;z-index:3;right:0;bottom:9px;display:flex;align-items:center;gap:9px;padding:10px 13px;border:1px solid rgba(255,255,255,.85);border-radius:14px;background:rgba(255,255,255,.91);box-shadow:0 10px 24px rgba(61,83,62,.09)}
+.app-shell .hero-note>span{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:#edf4e9;color:#6e926f;font-size:15px}
+.app-shell .hero-note b,.app-shell .hero-note small{display:block}
+.app-shell .hero-note b{font-size:9px;color:#4d6650}
+.app-shell .hero-note small{margin-top:3px;font-size:8px;color:#94a095}
+.app-shell .stats{gap:14px}
+.app-shell .stat{padding:19px 20px;border-radius:19px;background:linear-gradient(150deg,#fff 0%,#fbfcf8 100%)}
+.app-shell .stat-top{font-weight:700}
+.app-shell .stat strong{font-size:30px}
+.app-shell .panel{border-radius:21px;padding:23px;background:rgba(255,255,252,.96);box-shadow:0 10px 30px rgba(43,67,47,.045)}
+.app-shell .panel-head h3{font-size:14px;letter-spacing:-.3px}
+.app-shell .quick-actions button{min-height:44px}
+.app-shell .pet-avatar-large{width:76px;height:76px;border-radius:24px}
+.app-shell .pet-card{border-radius:21px}
+.app-shell .pet-card-avatar{width:66px;height:66px;border-radius:21px}
+.app-shell .record-summary-item{border-radius:17px}
+.app-shell .calendar-cell{min-height:82px;border-radius:14px}
+.app-shell .modal-card{border-radius:25px}
+.app-shell .mobile-foot{color:#9aa89b}
+.app-shell.theme-dark .main{background:radial-gradient(ellipse at 92% 0%,rgba(69,102,75,.12),transparent 32%),#111a15}
+.app-shell.theme-dark .welcome{background:linear-gradient(112deg,#263b2c 0%,#2b382d 52%,#3a3029 100%);border-color:#405443}
+.app-shell.theme-dark .welcome h2{color:#e8f0e8}
+.app-shell.theme-dark .welcome h2 em{color:#a7c4a8}
+.app-shell.theme-dark .welcome p{color:#b4c3b5}
+.app-shell.theme-dark .welcome-cta{background:#789b80;color:#132018}
+.app-shell.theme-dark .hero-pet-circle{background:linear-gradient(145deg,#344d38,#554638)}
+.app-shell.theme-dark .hero-sun{background:rgba(255,255,255,.05)}
+.app-shell.theme-dark .hero-note{background:#25372b;border-color:#405443}
+.app-shell.theme-dark .hero-note b{color:#e1ece2}
+.app-shell.theme-dark .hero-note small{color:#b0c0b2}
+.app-shell.theme-dark .hero-note>span{background:#344b38;color:#c4dfc6}
+.app-shell.theme-dark .brand-mark{box-shadow:0 9px 18px rgba(0,0,0,.25)}
+@media(max-width:900px){
+ .app-shell .welcome{grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);padding:26px}
+ .app-shell .hero-pet-circle{width:160px;height:160px}
+ .app-shell .hero-pet-circle svg{width:150px;height:145px}
+}
+@media(max-width:760px){
+ .app-shell .welcome{grid-template-columns:minmax(0,1fr) 135px;min-height:220px;padding:22px 19px;border-radius:22px;gap:0}
+ .app-shell .welcome h2{font-size:25px;letter-spacing:-1px}
+ .app-shell .welcome p{font-size:10px;max-width:260px}
+ .app-shell .welcome-cta{margin-top:13px;padding:10px 12px}
+ .app-shell .welcome-art{min-height:165px;transform:scale(.82);transform-origin:center}
+ .app-shell .hero-pet-circle{width:150px;height:150px}
+ .app-shell .hero-note{right:-10px;bottom:0;padding:8px}
+ .app-shell .hero-note b{font-size:8px}
+ .app-shell .hero-note small{font-size:7px}
+ .app-shell .hero-float-heart{right:0;top:8px}
+ .app-shell .hero-float-paw{left:-2px;bottom:12px}
+}
+@media(max-width:420px){
+ .app-shell .welcome{grid-template-columns:minmax(0,1fr) 100px;padding:19px 15px;min-height:206px}
+ .app-shell .welcome h2{font-size:22px}
+ .app-shell .welcome p{font-size:9px;line-height:1.6}
+ .app-shell .welcome-art{transform:scale(.68);width:145px;margin-left:-22px}
+ .app-shell .hero-note{display:none}
+ .app-shell .hero-float-heart{right:3px}
+}
