@@ -16,6 +16,12 @@ Aplicativo responsivo para organizar o cuidado e o histórico dos pets. A branch
 - Cadastro de múltiplos pets, edição de perfil, captura por câmera nativa e seleção da galeria.
 - Carteira de vacinação com dose, reforço e lembretes recorrentes.
 - Controle de cio, histórico editável e estimativa baseada no histórico.
+- Módulo de medicamentos e tratamentos com dosagem prescrita, via, frequência, duração, status e lembretes.
+- Rotina de higiene e cuidados com recorrência e próximos agendamentos.
+- Agenda de contatos veterinários e clínicas, com telefone, e-mail, endereço e especialidade.
+- Álbum de memórias com fotos compactadas e registros por data.
+- Relatórios consolidados, impressão/PDF pelo navegador e exportação CSV.
+- Carteirinha digital com QR Code gerado localmente no dispositivo.
 - Saúde, medicamentos, consultas, peso e exames.
 - Reprodução, gestação, parto, pós-parto e filhotes (registros organizacionais).
 - Compromissos e calendário mensal com navegação entre meses.
