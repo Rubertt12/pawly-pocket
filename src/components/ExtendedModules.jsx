@@ -149,7 +149,7 @@ export default function ExtendedModules({page,pet,updatePet,tutorEmail=''}) {
             <label>Frequência<input value={draft.frequency||''} onChange={e=>setDraft(v=>({...v,frequency:e.target.value}))} placeholder="Ex.: a cada 12 horas"/></label>
             <label>Início<input type="date" value={draft.start||today()} onChange={e=>setDraft(v=>({...v,start:e.target.value}))}/></label>
             <label>Fim previsto<input type="date" value={draft.end||''} onChange={e=>setDraft(v=>({...v,end:e.target.value}))}/></label>
-            <label>Próxima dose / lembrete<input type="datetime-local" value={draft.next||''} onChange={e=>setDraft(v=>({...v,next:e.target.value}))}/></label>
+            <label>Próxima dose / lembrete<input type="date" value={draft.next||''} onChange={e=>setDraft(v=>({...v,next:e.target.value}))}/></label>
             <label>Status<select value={draft.status||'Em andamento'} onChange={e=>setDraft(v=>({...v,status:e.target.value}))}>{['Em andamento','Pausado','Concluído'].map(x=><option key={x}>{x}</option>)}</select></label>
             <label>Veterinário responsável<input value={draft.vet||''} onChange={e=>setDraft(v=>({...v,vet:e.target.value}))}/></label>
           </> : <>
