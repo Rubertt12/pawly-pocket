@@ -22,6 +22,7 @@
     "@capacitor/app": "^8.0.0",
     "@capgo/capacitor-updater": "^8.54.0",
     "@supabase/supabase-js": "2.119.0",
+    "qrcode": "^1.5.4",
     "@capacitor/browser": "^8.0.0"
   },
   "devDependencies": {
