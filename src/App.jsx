@@ -6,7 +6,7 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { supabase } from './lib/supabase.js';
-import ExtendedModules from './components/ExtendedModules.jsx';
+const ExtendedModules = React.lazy(() => import('./components/ExtendedModules.jsx'));
 
 const STORAGE_KEY = 'petal_data_v1';
 const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
@@ -637,7 +637,7 @@ function App() {
     reader.readAsText(file);
   };
   const content = () => {
-    if (['medications','care','veterinary','memories','reports','pet-card'].includes(page)) return <ExtendedModules page={page} pet={pet} updatePet={updatePet} tutorEmail={session?.user?.email||''}/>;
+    if (['medications','care','veterinary','memories','reports','pet-card'].includes(page)) return <React.Suspense fallback={<section className="panel">Preparando este módulo...</section>}><ExtendedModules page={page} pet={pet} updatePet={updatePet} tutorEmail={session?.user?.email||''}/></React.Suspense>;
     if (page === 'home') return <>
       <div className="page-heading"><div><span className="eyebrow">SEU ESPAÇO DE CUIDADO</span><h1>Olá, {(session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'tutor').trim().split(/\s+/)[0]}! 💚</h1><p>Tudo organizado para acompanhar a saúde de {profile.name || 'sua pet'}.</p></div><button className="btn btn-primary" onClick={()=>openForm('health')}>+ Novo registro</button></div>
       <div className="welcome" hidden={dashboardPrefs.welcome===false}>
