@@ -646,3 +646,13 @@ body{overflow-x:hidden}
  .app-shell .record-card .actions{justify-content:flex-start}
  .app-shell .record-card .actions .small-btn{flex:1}
 }
+
+
+/* Pawly Pocket — weight history chart */
+.app-shell .weight-chart{padding:12px 8px 0;color:var(--green-dark)}
+.app-shell .weight-chart svg{display:block;width:100%;height:auto;overflow:visible}
+.app-shell .weight-chart svg line{stroke:var(--line);stroke-width:1}
+.app-shell .weight-chart svg text{fill:currentColor;font-size:11px;font-weight:700}
+.app-shell .weight-chart-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;padding:5px 12px}
+.app-shell.theme-dark .weight-chart{color:#a9c9ad}
+@media(max-width:520px){.app-shell .weight-chart{padding:10px 0 0}.app-shell .weight-chart svg text{font-size:10px}}
