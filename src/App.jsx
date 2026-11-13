@@ -6,6 +6,7 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { supabase } from './lib/supabase.js';
+import ExtendedModules from './components/ExtendedModules.jsx';
 
 const STORAGE_KEY = 'petal_data_v1';
 const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
@@ -14,9 +15,9 @@ const PAWLY_NATIVE_REDIRECT = 'com.pawlypocket.app://login-callback/';
 const isEmptyStarterPet = p => {
   const profile=p?.profile||{};
   const hasProfile=Object.entries(profile).some(([key,value])=>!['sex','sterilized'].includes(key)&&String(value??'').trim()!==''&&!(key==='name'&&value==='Minha pet'));
-  return !hasProfile && !['vaccines','heat','health','reproduction','events','feeding','expenses'].some(key=>(p?.[key]||[]).length);
+  return !hasProfile && !['vaccines','heat','health','reproduction','events','feeding','expenses','medications','care','veterinary','memories'].some(key=>(p?.[key]||[]).length);
 };
-const blankPet = () => ({ id: crypto.randomUUID(), profile: { name: 'Minha pet', breed: '', birth: '', sex: 'Fêmea', weight: '', notes: '', photo: '', sterilized: 'Não', microchip: '' }, vaccines: [], heat: [], health: [], reproduction: [], events: [], feeding: [], expenses: [] });
+const blankPet = () => ({ id: crypto.randomUUID(), profile: { name: 'Minha pet', breed: '', birth: '', sex: 'Fêmea', weight: '', notes: '', photo: '', sterilized: 'Não', microchip: '' }, vaccines: [], heat: [], health: [], reproduction: [], events: [], feeding: [], expenses: [], medications: [], care: [], veterinary: [], memories: [] });
 const todayISO = () => new Date().toISOString().slice(0,10);
 const addMonthsSafe = (value, months) => { const d=new Date(value+'T12:00:00'), day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+months); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); return d.toISOString().slice(0,10); };
 const nextRecurringDate = x => { if(!x.repeatEnabled||!x.repeatEvery) return ''; let next=x.next||x.date||x.start; if(!next)return ''; let guard=0; while(next<todayISO()&&guard++<240) next=addMonthsSafe(next,Number(x.repeatEvery)||1); if(next===(x.next||x.date||x.start)&&next<=todayISO()) next=addMonthsSafe(next,Number(x.repeatEvery)||1); return next; };
@@ -40,10 +41,10 @@ const nav = [
   ['pets','♧','Meus pets'],['timeline','◷','Linha do tempo'],['search','⌕','Buscar registros'],['reminders','♧','Central de lembretes'],['documents','▤','Documentos'],['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']
 ];
 const navGroups = [
-  {id:'health',title:'Saúde',icon:'♡',items:[['vaccines','♡','Vacinação'],['heat','◉','Controle de cio'],['health','✚','Saúde e histórico'],['weight','↗','Peso e crescimento']]},
-  {id:'routine',title:'Rotina',icon:'▦',items:[['reproduction','♧','Reprodução'],['feeding','◒','Alimentação'],['calendar','▦','Calendário'],['reminders','♧','Central de lembretes']]},
-  {id:'management',title:'Gestão',icon:'＄',items:[['expenses','＄','Despesas do pet']]},
-  {id:'records',title:'Pets e histórico',icon:'◷',items:[['pets','♧','Meus pets'],['profile','♙','Perfil do pet'],['timeline','◷','Linha do tempo'],['search','⌕','Buscar registros'],['documents','▤','Documentos']]},
+  {id:'health',title:'Saúde',icon:'♡',items:[['vaccines','♡','Vacinação'],['medications','✚','Medicamentos'],['veterinary','⚕','Veterinários'],['heat','◉','Controle de cio'],['health','✚','Saúde e histórico'],['weight','↗','Peso e crescimento']]},
+  {id:'routine',title:'Rotina',icon:'▦',items:[['reproduction','♧','Reprodução'],['feeding','◒','Alimentação'],['care','✿','Higiene e cuidados'],['calendar','▦','Calendário'],['reminders','♧','Central de lembretes']]},
+  {id:'management',title:'Gestão',icon:'＄',items:[['expenses','＄','Despesas do pet'],['reports','▤','Relatórios']]},
+  {id:'records',title:'Pets e histórico',icon:'◷',items:[['pets','♧','Meus pets'],['profile','♙','Perfil do pet'],['timeline','◷','Linha do tempo'],['memories','♡','Memórias e fotos'],['pet-card','▣','Carteirinha digital'],['search','⌕','Buscar registros'],['documents','▤','Documentos']]},
   {id:'settings',title:'Configurações',icon:'⚙',items:[['account','♙','Conta e nuvem'],['sharing','♧','Compartilhar pet'],['dashboard','⚙','Painel e notificações'],['customize','◐','Personalizar'],['backup','⇧','Backup e dados']] }
 ];
 const date = value => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
@@ -335,7 +336,7 @@ function App() {
   const remaining = nextHeat ? Math.ceil((nextHeat.getTime() - new Date().setHours(0,0,0,0))/86400000) : null;
   const upcoming = useMemo(() => {
     const recurring = (arr, label) => arr.map(x => ({...x, title:x.title||x.name||x.type||label, date:x.repeatEnabled ? nextRecurringDate(x) : (x.next||x.date||x.start), type:label}));
-    return [...recurring(pet.vaccines||[],'Vacina'), ...recurring((pet.health||[]).filter(x=>x.repeatEnabled),'Saúde'), ...recurring(pet.events||[],'Compromisso'), ...recurring((pet.heat||[]).filter(x=>x.repeatEnabled),'Cio'), ...recurring((pet.reproduction||[]).filter(x=>x.repeatEnabled),'Reprodução')]
+    return [...recurring(pet.vaccines||[],'Vacina'), ...recurring((pet.health||[]).filter(x=>x.repeatEnabled),'Saúde'), ...recurring(pet.events||[],'Compromisso'), ...recurring((pet.heat||[]).filter(x=>x.repeatEnabled),'Cio'), ...recurring((pet.reproduction||[]).filter(x=>x.repeatEnabled),'Reprodução'), ...recurring((pet.medications||[]).filter(x=>x.status!=='Concluído'&&x.next),'Medicamento'), ...recurring((pet.care||[]).filter(x=>x.repeatEnabled),'Higiene')]
       .filter(x=>x.date && daysUntil(x.date)<=30).sort((a,b)=>a.date.localeCompare(b.date));
   }, [pet]);
   React.useEffect(()=>{
@@ -523,7 +524,7 @@ function App() {
   };
   const openForm = (type, existing={}) => { setForm({...existing,date:existing.date||new Date().toISOString().slice(0,10)}); setModal(type); };
   const allRecords = (source=pet) => {
-    const groups=[['Vacina',source.vaccines||[],x=>x.name||'Vacina',x=>x.date||x.next],['Cio',source.heat||[],x=>'Ciclo de cio',x=>x.start],['Saúde',source.health||[],x=>x.title||x.type||'Registro de saúde',x=>x.date],['Reprodução',source.reproduction||[],x=>x.type||'Evento reprodutivo',x=>x.date],['Compromisso',source.events||[],x=>x.title||x.type||'Compromisso',x=>x.date],['Alimentação',source.feeding||[],x=>x.food||x.type||'Alimentação',x=>x.date],['Despesa',source.expenses||[],x=>x.description||x.category||'Despesa',x=>x.date]];
+    const groups=[['Vacina',source.vaccines||[],x=>x.name||'Vacina',x=>x.date||x.next],['Cio',source.heat||[],x=>'Ciclo de cio',x=>x.start],['Saúde',source.health||[],x=>x.title||x.type||'Registro de saúde',x=>x.date],['Reprodução',source.reproduction||[],x=>x.type||'Evento reprodutivo',x=>x.date],['Compromisso',source.events||[],x=>x.title||x.type||'Compromisso',x=>x.date],['Alimentação',source.feeding||[],x=>x.food||x.type||'Alimentação',x=>x.date],['Despesa',source.expenses||[],x=>x.description||x.category||'Despesa',x=>x.date],['Medicamento',source.medications||[],x=>x.name||'Medicamento',x=>x.date||x.start],['Higiene',source.care||[],x=>x.title||x.category||'Cuidado',x=>x.date||x.next],['Memória',source.memories||[],x=>x.title||'Memória',x=>x.date]];
     return groups.flatMap(([category,arr,label,getDate])=>arr.map(x=>({id:x.id,category,title:label(x),date:getDate(x),notes:x.notes||'',petName:source.profile?.name||'Pet',petId:source.id}))).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   };
   const openPetForm = (target=pet) => { setForm({...target.profile, _petId:target.id}); setModal('pet'); };
@@ -636,6 +637,7 @@ function App() {
     reader.readAsText(file);
   };
   const content = () => {
+    if (['medications','care','veterinary','memories','reports','pet-card'].includes(page)) return <ExtendedModules page={page} pet={pet} updatePet={updatePet} tutorEmail={session?.user?.email||''}/>;
     if (page === 'home') return <>
       <div className="page-heading"><div><span className="eyebrow">SEU ESPAÇO DE CUIDADO</span><h1>Olá, {(session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'tutor').trim().split(/\s+/)[0]}! 💚</h1><p>Tudo organizado para acompanhar a saúde de {profile.name || 'sua pet'}.</p></div><button className="btn btn-primary" onClick={()=>openForm('health')}>+ Novo registro</button></div>
       <div className="welcome" hidden={dashboardPrefs.welcome===false}>
