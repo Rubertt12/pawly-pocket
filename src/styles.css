@@ -631,3 +631,18 @@ body{overflow-x:hidden}
  .app-shell .hero-note{display:none}
  .app-shell .hero-float-heart{right:3px}
 }
+
+
+/* Pawly Pocket — nutrition and expense modules */
+.app-shell .record-details strong{color:var(--green-dark);font-size:13px}
+.app-shell .record-status.ok{white-space:nowrap}
+.app-shell .record-card .actions{display:flex;gap:7px;flex-wrap:wrap}
+.app-shell .record-card .actions .small-btn{white-space:nowrap}
+.app-shell .form-grid label,.app-shell .modal-card label{min-width:0}
+.app-shell .modal-card input,.app-shell .modal-card select,.app-shell .modal-card textarea{width:100%;box-sizing:border-box}
+.app-shell .empty-state .btn{margin-top:5px}
+.app-shell.theme-dark .record-details strong{color:#b9dfbf}
+@media(max-width:760px){
+ .app-shell .record-card .actions{justify-content:flex-start}
+ .app-shell .record-card .actions .small-btn{flex:1}
+}
