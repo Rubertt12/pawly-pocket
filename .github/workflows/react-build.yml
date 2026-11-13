@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - rebuild/react-js
+      - redesign/premium-ui
   pull_request:
     branches:
       - main
