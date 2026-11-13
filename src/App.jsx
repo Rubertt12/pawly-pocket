@@ -71,6 +71,7 @@ function App() {
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateStatus, setUpdateStatus] = useState('');
   const [updateVersion, setUpdateVersion] = useState('');
+  const [isOnline,setIsOnline] = useState(() => navigator.onLine);
   const [session, setSession] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [authEmail, setAuthEmail] = useState('');
@@ -89,6 +90,14 @@ function App() {
   const cloudVersions = React.useRef({});
   const authEventSeen = React.useRef(false);
   const [pendingInvite, setPendingInvite] = useState(() => new URLSearchParams(window.location.search).get('invite') || '');
+
+  React.useEffect(()=>{
+    const handleOnline=()=>{setIsOnline(true);setStore(current=>({...current,pets:current.pets.map(p=>({...p}))}));};
+    const handleOffline=()=>setIsOnline(false);
+    window.addEventListener('online',handleOnline);
+    window.addEventListener('offline',handleOffline);
+    return ()=>{window.removeEventListener('online',handleOnline);window.removeEventListener('offline',handleOffline);};
+  },[]);
 
   // Android system back gesture: close overlays first, then return to the overview.
   React.useEffect(()=>{
@@ -751,7 +760,7 @@ function App() {
         <div className="nav-group-items">{group.items.map(([key,icon,label])=><button key={key} className={`nav-link ${page===key?'active':''}`} onClick={()=>changePage(key)}><span>{icon}</span>{label}</button>)}</div>
       </section>)}
     </nav><div className="sidebar-bottom"><div className="tip-card"><span>🌷</span><b>Pequenos cuidados, grandes momentos.</b><p>Registre cada detalhe da saúde.</p></div><div className="sidebar-foot">Pawly Pocket • Dados neste aparelho</div></div></aside>
-    {menuOpen&&<button className="overlay" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(v=>!v)} aria-label="Abrir menu">☰</button><div className="crumb">Pawly Pocket <span>/</span> <b>{navGroups.flatMap(group=>group.items).find(item=>item[0]===page)?.[2]|| (page==='home'?'Visão geral':page==='sharing'?'Compartilhar pet':page==='account'?'Conta e nuvem':'Perfil do pet')}</b></div><div className="top-actions"><button className="icon-btn" onClick={toggleDark}>◐</button><div className="top-avatar">🐶</div></div></header><div className="content">{content()}</div><footer className="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer></main>
+    {menuOpen&&<button className="overlay" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(v=>!v)} aria-label="Abrir menu">☰</button><div className="crumb">Pawly Pocket <span>/</span> <b>{navGroups.flatMap(group=>group.items).find(item=>item[0]===page)?.[2]|| (page==='home'?'Visão geral':page==='sharing'?'Compartilhar pet':page==='account'?'Conta e nuvem':'Perfil do pet')}</b></div><div className="top-actions"><span className={"connection-pill "+(isOnline?"online":"offline")} title={isOnline?"Conexão disponível":"Sem internet: alterações ficam neste aparelho e serão reenviadas quando a conexão voltar"}>{isOnline?"Online":"Offline"}</span><button className="icon-btn" onClick={toggleDark}>◐</button><div className="top-avatar">🐶</div></div></header><div className="content">{content()}</div><footer className="mobile-foot">Pawly Pocket · Feito para cuidar com carinho 🐾</footer></main>
     {modal&&<div className="modal-backdrop" onClick={()=>setModal('')}><form className="modal-card" onSubmit={saveForm} onClick={e=>e.stopPropagation()}><button type="button" className="modal-close" onClick={()=>setModal('')}>×</button>
       <h2>{modal==='pet'?(form._petId?'Editar pet':'Adicionar pet'):({heat:'Registrar início do cio',vaccine:'Registrar vacina',health:'Registro de saúde',event:'Novo compromisso',reproduction:'Registro reprodutivo',food:'Registrar alimentação',expense:'Registrar despesa'})[modal]}</h2>
       {modal==='pet'?<>
