@@ -450,3 +450,88 @@ body{overflow-x:hidden}
   .app-shell .stat strong{font-size:21px}
   .app-shell .quick-actions{grid-template-columns:1fr}
 }
+
+
+/* Pawly Pocket — polish for every module */
+.app-shell .record-summary{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 17px
+}
+.app-shell .record-summary-item{
+  min-width:0;padding:16px 18px;border:1px solid #e6eee5;border-radius:16px;
+  background:rgba(255,255,255,.9);box-shadow:0 7px 20px rgba(43,67,47,.035)
+}
+.app-shell .record-summary-item span{display:block;color:#849287;font-size:10px;font-weight:650;margin-bottom:8px}
+.app-shell .record-summary-item strong{display:block;color:#304936;font-size:22px;letter-spacing:-.5px}
+.app-shell .record-summary-item .record-summary-date{font-size:13px;letter-spacing:0}
+.app-shell .record-summary-item .text-alert{color:#bd6b55}
+.app-shell .record-search{width:100%;box-sizing:border-box;margin-bottom:9px}
+.app-shell .record-card{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:15px 0;border-bottom:1px solid #edf2ec
+}
+.app-shell .record-card:last-child{border-bottom:0;padding-bottom:0}
+.app-shell .record-card-main{flex:1;min-width:0}
+.app-shell .record-card-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.app-shell .record-card-title>b{font-size:12px;color:#344b39}
+.app-shell .record-card-main>p{margin:5px 0 8px;font-size:10px;line-height:1.6;color:#89968c;overflow-wrap:anywhere}
+.app-shell .record-details{display:flex;gap:7px 14px;flex-wrap:wrap}
+.app-shell .record-details span{font-size:9px;color:#87958a}
+.app-shell .record-status{display:inline-flex;align-items:center;border-radius:30px;padding:5px 8px;font-size:9px;font-weight:750}
+.app-shell .record-status.ok{background:#edf5ed;color:#4d7956}
+.app-shell .record-status.soon{background:#fff5e6;color:#a8752e}
+.app-shell .record-status.overdue{background:#fff0ed;color:#b85f50}
+.app-shell .empty-state{display:grid;justify-items:center;text-align:center;gap:8px;padding:28px 12px}
+.app-shell .empty-state>span{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:#edf4eb;font-size:22px}
+.app-shell .empty-state>b{font-size:12px;color:#405744}
+.app-shell .empty-state>p{max-width:360px;margin:0 0 5px;color:#89968c;font-size:10px;line-height:1.6}
+.app-shell .profile-age{padding:10px 13px;border-radius:12px;background:#edf5ec;color:#67806b;font-size:11px}
+.app-shell .profile-age b{color:#36543d}
+.app-shell .pet-card-meta{display:flex;gap:7px;flex-wrap:wrap}
+.app-shell .pet-card-meta span{padding:6px 9px;border-radius:30px;background:#f1f6ef;color:#718276;font-size:9px}
+.app-shell .react-calendar-grid{gap:7px}
+.app-shell .calendar-cell{min-height:75px;border:1px solid #e9efe7;border-radius:12px;background:#fbfdfb;padding:8px;transition:border-color .15s,background .15s}
+.app-shell .calendar-cell b{color:#425746;font-size:11px}
+.app-shell .calendar-cell span{display:block;margin-top:7px;padding:4px 5px;border-radius:6px;background:#edf5ec;color:#52745a;font-size:8px;line-height:1.35}
+.app-shell .calendar-cell.today{border-color:#8eaf94;background:#f1f7ef;box-shadow:inset 0 0 0 1px #d8e8d7}
+.app-shell .calendar-cell.empty{background:transparent;border-color:transparent}
+.app-shell .document-card{border:1px solid #e8eee6;border-radius:15px;padding:14px;background:#fff}
+.app-shell .document-card b{color:#3c5141;font-size:11px}
+.app-shell .document-card small{color:#8b988d;font-size:9px}
+.app-shell .pet-card{border:1px solid #e6eee5;background:#fff;padding:18px}
+.app-shell .pet-card-top{gap:13px}
+.app-shell .pet-card-top h3{font-size:14px;color:#344b39}
+.app-shell .pet-card-actions{gap:7px;flex-wrap:wrap}
+.app-shell .pet-card-actions .btn{flex:1}
+.app-shell .modal-card{max-height:min(88dvh,850px);overflow:auto}
+.app-shell .modal-card form{display:grid;gap:13px}
+.app-shell .modal-card .btn-primary{position:sticky;bottom:0}
+.app-shell.theme-dark .record-summary-item,.app-shell.theme-dark .record-card,.app-shell.theme-dark .document-card{background:#1b2921;border-color:#34463a}
+.app-shell.theme-dark .record-summary-item span,.app-shell.theme-dark .record-card-main>p,.app-shell.theme-dark .record-details span{color:#a7b7aa}
+.app-shell.theme-dark .record-summary-item strong,.app-shell.theme-dark .record-card-title>b,.app-shell.theme-dark .empty-state>b{color:#e6f0e7}
+.app-shell.theme-dark .record-status.ok{background:#294331;color:#b9dfbf}
+.app-shell.theme-dark .record-status.soon{background:#4a3925;color:#f1ce91}
+.app-shell.theme-dark .record-status.overdue{background:#4a2d2a;color:#f0b1a6}
+.app-shell.theme-dark .empty-state>span,.app-shell.theme-dark .profile-age,.app-shell.theme-dark .pet-card-meta span{background:#26392c;color:#b8cbb9}
+.app-shell.theme-dark .profile-age b{color:#e1eee2}
+.app-shell.theme-dark .calendar-cell{background:#1b2921;border-color:#34463a}
+.app-shell.theme-dark .calendar-cell b{color:#e0ebe1}
+.app-shell.theme-dark .calendar-cell span{background:#2a4030;color:#c7dfca}
+.app-shell.theme-dark .calendar-cell.today{background:#263b2c;border-color:#719779}
+.app-shell.theme-dark .pet-card-top h3,.app-shell.theme-dark .document-card b{color:#e5efe6}
+@media(max-width:760px){
+  .app-shell .record-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .app-shell .record-summary-item{padding:13px;border-radius:13px}
+  .app-shell .record-summary-item strong{font-size:20px}
+  .app-shell .record-card{align-items:flex-start;flex-direction:column;gap:10px}
+  .app-shell .record-card .actions{width:100%;justify-content:flex-end}
+  .app-shell .react-calendar-grid{gap:3px}
+  .app-shell .calendar-cell{min-height:57px;padding:5px;border-radius:8px}
+  .app-shell .calendar-cell span{font-size:7px;padding:3px 2px}
+  .app-shell .pet-card-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:380px){
+  .app-shell .record-summary-item span{font-size:9px}
+  .app-shell .record-summary-item strong{font-size:18px}
+  .app-shell .calendar-day-name{font-size:8px}
+  .app-shell .calendar-cell{min-height:49px}
+}
